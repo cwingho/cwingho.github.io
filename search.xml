@@ -1,0 +1,993 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>猴子也懂的 A* 搜尋算法</title>
+    <url>/2021/03/02/a-star-algo/</url>
+    <content><![CDATA[<p>A* 搜尋算法（A* Search Algorithm）是用於在平面上找出點與點之間的最短或最低成本的路徑的一種算法。常用於地圖上的路線規劃，或是遊戲中人物的移動，自動尋路功能等。</p>
+<a id="more"></a>
+
+<p>文章部分內容和圖片源自：</p>
+<blockquote>
+<p>A* Search Algorithm - <a href="https://www.geeksforgeeks.org/a-search-algorithm/">https://www.geeksforgeeks.org/a-search-algorithm/</a></p>
+</blockquote>
+<p>這是筆者覺得在眾多介紹A* search algo. 的文章中，這篇最為淺白易懂。筆者在搬運同時，也適當的修改了部分內容，在含糊的地方補充了一些說明，務求讓猴子都能看懂。</p>
+<h3 id="前設"><a href="#前設" class="headerlink" title="前設"></a>前設</h3><p>假設我們有一張2D的方格地圖，白色為可走動的地方，黑色為障礙物，每個方格最多可以向八個方向移動。我們需要從起點（紅色）到達終點（綠色），因此需要找出最一條最省氣力路徑。</p>
+<p><img src="/2021/03/02/a-star-algo/a_star_algo_example_1.png" alt="A* search algo example" title="A* search algo example"></p>
+<h3 id="為什麼要用-A-搜尋算法？"><a href="#為什麼要用-A-搜尋算法？" class="headerlink" title="為什麼要用 A* 搜尋算法？"></a>為什麼要用 A* 搜尋算法？</h3><p>簡單來說，因為它比笨方法要聰明不少。要找出由起點到終點的最佳路線，我們可以列出所有可行的路線，並計算<strong>所有</strong>可行路線的成本，然後採用成本最低的路線，我們稱這為笨方法，因為計算量十分大。相比之下，A* 算法說顯得聰明多了，它透過粗略預估(沒錯！就是猜，有策略的猜）由起點走到當前位置再走到終點的成本，果斷放棄一些看著就費氣力的路線，從而大大減少了計算量節省時間。因為它往往可以在合理的時間內給出合理的答案，所以廣泛受用。而這種透過估算快速計算出合理/最佳/接近最佳答案的方法也被稱為<strong>啟發式算法</strong>。</p>
+<h3 id="算法"><a href="#算法" class="headerlink" title="算法"></a>算法</h3><p>我們首先需要記住一條公式:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">f(x) &#x3D; g(x) + h(x)</span><br></pre></td></tr></table></figure>
+
+<p><code>x</code>：可以是在方格地圖上任何一個可走動的格(白色)<br><code>g(x)</code>：由起點走到x的成本<br><code>h(x)</code>：由x走到終點的預估成本，也就是猜的部分，一般稱之為Heuristics (啟發函數，後面會詳細說明)<br><code>f(x)</code>：由起點走到x再走到終點的預估成本</p>
+<p>這很簡單吧？說白了就是算法每一步都挑 <code>f(x)</code> 最小的方格走，直到走到終點為止。</p>
+<h3 id="步驟"><a href="#步驟" class="headerlink" title="步驟"></a>步驟</h3><ol>
+<li><p>建立 Open list 並把起點方格放進去</p>
+</li>
+<li><p>建立 Close list</p>
+</li>
+<li><p>當 Open list 不為空時:</p>
+<ul>
+<li><p>找出當前 f(x) 最小的方格，稱為 q</p>
+</li>
+<li><p>把 q 移出 Open list</p>
+</li>
+<li><p>生成最多 8 個 q 的 successors (對應 8 個方向)，把 successors 的 parent 設定為 q</p>
+</li>
+<li><p>遍歷每個 successor:</p>
+<ul>
+<li>若 successor 為終點，停止遍歷<br>  計算：<ul>
+<li>successor.g = q.g + successor 與 q 的距離<ul>
+<li>successor.h = successor 與終點的估算距離</li>
+<li>successor.f = successor.g + successor.h</li>
+<li>返回算法所走過的方格，可以根據終點的 successor.parent 找出 parent 的 parent ……如此類推，直到找回起點 </li>
+</ul>
+</li>
+</ul>
+</li>
+<li>若 Open list 中已有在當前 successor 的方格在且 f 比當前 successor.f 要少，則跳過，因為我們在 Open list 中已經有更好的路徑來 f(x)，當前 successor 已經不需要再估算 (沒用了)</li>
+<li>若 Close list 中已有在當前 successor 的方格在且 f 比當前 successor.f 要少，則跳過，因為就連更小 f(x) 的路徑都被放棄了，當前 successor 就更沒資格被估算了。相反，若當前 successor 要更少或當前 successor 的方格沒有出現在 Close list 中，則把當前 successor 放進 Open list</li>
+</ul>
+</li>
+<li><p>把 q 放進 Close list，因為已經估算完畢，沒利用價值了</p>
+</li>
+</ul>
+</li>
+</ol>
+<p>如下圖顯示，算法放棄了一些 successors，只會走到 f(x) 最少的方格<br><img src="/2021/03/02/a-star-algo/a_star_algo_example_2.png" alt="A* search algo example 2" title="A* search algo example 2"></p>
+<h3 id="啟發函數"><a href="#啟發函數" class="headerlink" title="啟發函數"></a>啟發函數</h3><p>我們可以輕易計算 g(x)，因為 g(x) 就是 g(x.parent) 加上 x 與 x.parent的距離而已。那麼 h(x) 呢？我們上面提到 h(x) 是估算出來的。既然叫做估算，那計算方式自然也不會複雜。下面會提到常用的3種估算方法：</p>
+<ol>
+<li><p>Manhattan Distance （曼哈頓距離）</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">h &#x3D; abs (current_cell.x – goal.x) + abs (current_cell.y – goal.y)</span><br></pre></td></tr></table></figure>
+<p>其實就是計算當前點大概要沿著縱軸和橫軸走多少步才能走到終點，十分容易理解。這方法適用於只能上下左右 4 個方向移動的場境 (最多4個successors)。<br><img src="/2021/03/02/a-star-algo/a_star_algo_example_3.png" alt="Manhattan distance example" title="Manhattan distance example"></p>
+</li>
+<li><p>Diagonal Distance (對角線距離)</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">h &#x3D; max &#123; abs(current_cell.x – goal.x),abs(current_cell.y – goal.y) &#125;</span><br></pre></td></tr></table></figure>
+<p>這個比方法1還用簡易，只取縱軸步數或橫軸步數之間的的較大者，這方法適用於能 8 個方向移動的場境。<br><img src="/2021/03/02/a-star-algo/a_star_algo_example_4.png" alt="Diagonal distance example" title="Diagonal distance example"></p>
+</li>
+<li><p>Euclidean Distance (歐氏距離)</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">h &#x3D; sqrt ( (current_cell.x – goal.x)&lt;sup&gt;2&lt;&#x2F;sup&gt; + (current_cell.y – goal.y)&lt;sup&gt;2&lt;&#x2F;sup&gt; )</span><br></pre></td></tr></table></figure>
+<p>也就是計算當前點與終點的直線距離，很好理解。這方法適用於可以360°移動的場境 (不再是按方格走動，就好像你的滑鼠一樣，可以任意移動)。<br><img src="/2021/03/02/a-star-algo/a_star_algo_example_5.png" alt="Euclidean distance example" title="Euclidean distance example"></p>
+</li>
+</ol>
+<h3 id="代碼"><a href="#代碼" class="headerlink" title="代碼"></a>代碼</h3><p>以下是自 <a href="https://www.geeksforgeeks.org/a-search-algorithm/">geeksforgeeks</a> 的代碼 (C++)：</p>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="comment">// A C++ Program to implement A* Search Algorithm</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;bits/stdc++.h&gt;</span></span></span><br><span class="line"><span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"> </span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> ROW 9</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> COL 10</span></span><br><span class="line"> </span><br><span class="line"><span class="comment">// Creating a shortcut for int, int pair type</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="built_in">pair</span>&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; Pair;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// Creating a shortcut for pair&lt;int, pair&lt;int, int&gt;&gt; type</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="built_in">pair</span>&lt;<span class="keyword">double</span>, <span class="built_in">pair</span>&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; &gt; pPair;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// A structure to hold the neccesary parameters</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">cell</span> &#123;</span></span><br><span class="line">    <span class="comment">// Row and Column index of its parent</span></span><br><span class="line">    <span class="comment">// Note that 0 &lt;= i &lt;= ROW-1 &amp; 0 &lt;= j &lt;= COL-1</span></span><br><span class="line">    <span class="keyword">int</span> parent_i, parent_j;</span><br><span class="line">    <span class="comment">// f = g + h</span></span><br><span class="line">    <span class="keyword">double</span> f, g, h;</span><br><span class="line">&#125;;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// A Utility Function to check whether given cell (row, col)</span></span><br><span class="line"><span class="comment">// is a valid cell or not.</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">isValid</span><span class="params">(<span class="keyword">int</span> row, <span class="keyword">int</span> col)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// Returns true if row number and column number</span></span><br><span class="line">    <span class="comment">// is in range</span></span><br><span class="line">    <span class="keyword">return</span> (row &gt;= <span class="number">0</span>) &amp;&amp; (row &lt; ROW) &amp;&amp; (col &gt;= <span class="number">0</span>)</span><br><span class="line">           &amp;&amp; (col &lt; COL);</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// A Utility Function to check whether the given cell is</span></span><br><span class="line"><span class="comment">// blocked or not</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">isUnBlocked</span><span class="params">(<span class="keyword">int</span> grid[][COL], <span class="keyword">int</span> row, <span class="keyword">int</span> col)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// Returns true if the cell is not blocked else false</span></span><br><span class="line">    <span class="keyword">if</span> (grid[row][col] == <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> (<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> (<span class="literal">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// A Utility Function to check whether destination cell has</span></span><br><span class="line"><span class="comment">// been reached or not</span></span><br><span class="line"><span class="function"><span class="keyword">bool</span> <span class="title">isDestination</span><span class="params">(<span class="keyword">int</span> row, <span class="keyword">int</span> col, Pair dest)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (row == dest.first &amp;&amp; col == dest.second)</span><br><span class="line">        <span class="keyword">return</span> (<span class="literal">true</span>);</span><br><span class="line">    <span class="keyword">else</span></span><br><span class="line">        <span class="keyword">return</span> (<span class="literal">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// A Utility Function to calculate the &#x27;h&#x27; heuristics.</span></span><br><span class="line"><span class="function"><span class="keyword">double</span> <span class="title">calculateHValue</span><span class="params">(<span class="keyword">int</span> row, <span class="keyword">int</span> col, Pair dest)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// Return using the distance formula</span></span><br><span class="line">    <span class="keyword">return</span> ((<span class="keyword">double</span>)<span class="built_in">sqrt</span>(</span><br><span class="line">        (row - dest.first) * (row - dest.first)</span><br><span class="line">        + (col - dest.second) * (col - dest.second)));</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// A Utility Function to trace the path from the source</span></span><br><span class="line"><span class="comment">// to destination</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">tracePath</span><span class="params">(cell cellDetails[][COL], Pair dest)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;\nThe Path is &quot;</span>);</span><br><span class="line">    <span class="keyword">int</span> row = dest.first;</span><br><span class="line">    <span class="keyword">int</span> col = dest.second;</span><br><span class="line"> </span><br><span class="line">    <span class="built_in">stack</span>&lt;Pair&gt; Path;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">while</span> (!(cellDetails[row][col].parent_i == row</span><br><span class="line">             &amp;&amp; cellDetails[row][col].parent_j == col)) &#123;</span><br><span class="line">        Path.push(<span class="built_in">make_pair</span>(row, col));</span><br><span class="line">        <span class="keyword">int</span> temp_row = cellDetails[row][col].parent_i;</span><br><span class="line">        <span class="keyword">int</span> temp_col = cellDetails[row][col].parent_j;</span><br><span class="line">        row = temp_row;</span><br><span class="line">        col = temp_col;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    Path.push(<span class="built_in">make_pair</span>(row, col));</span><br><span class="line">    <span class="keyword">while</span> (!Path.empty()) &#123;</span><br><span class="line">        <span class="built_in">pair</span>&lt;<span class="keyword">int</span>, <span class="keyword">int</span>&gt; p = Path.top();</span><br><span class="line">        Path.pop();</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;-&gt; (%d,%d) &quot;</span>, p.first, p.second);</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// A Function to find the shortest path between</span></span><br><span class="line"><span class="comment">// a given source cell to a destination cell according</span></span><br><span class="line"><span class="comment">// to A* Search Algorithm</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">aStarSearch</span><span class="params">(<span class="keyword">int</span> grid[][COL], Pair src, Pair dest)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">// If the source is out of range</span></span><br><span class="line">    <span class="keyword">if</span> (isValid(src.first, src.second) == <span class="literal">false</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Source is invalid\n&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// If the destination is out of range</span></span><br><span class="line">    <span class="keyword">if</span> (isValid(dest.first, dest.second) == <span class="literal">false</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Destination is invalid\n&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// Either the source or the destination is blocked</span></span><br><span class="line">    <span class="keyword">if</span> (isUnBlocked(grid, src.first, src.second) == <span class="literal">false</span></span><br><span class="line">        || isUnBlocked(grid, dest.first, dest.second)</span><br><span class="line">               == <span class="literal">false</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Source or the destination is blocked\n&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// If the destination cell is the same as source cell</span></span><br><span class="line">    <span class="keyword">if</span> (isDestination(src.first, src.second, dest)</span><br><span class="line">        == <span class="literal">true</span>) &#123;</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;We are already at the destination\n&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// Create a closed list and initialise it to false which</span></span><br><span class="line">    <span class="comment">// means that no cell has been included yet This closed</span></span><br><span class="line">    <span class="comment">// list is implemented as a boolean 2D array</span></span><br><span class="line">    <span class="keyword">bool</span> closedList[ROW][COL];</span><br><span class="line">    <span class="built_in">memset</span>(closedList, <span class="literal">false</span>, <span class="keyword">sizeof</span>(closedList));</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// Declare a 2D array of structure to hold the details</span></span><br><span class="line">    <span class="comment">// of that cell</span></span><br><span class="line">    cell cellDetails[ROW][COL];</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">int</span> i, j;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; ROW; i++) &#123;</span><br><span class="line">        <span class="keyword">for</span> (j = <span class="number">0</span>; j &lt; COL; j++) &#123;</span><br><span class="line">            cellDetails[i][j].f = FLT_MAX;</span><br><span class="line">            cellDetails[i][j].g = FLT_MAX;</span><br><span class="line">            cellDetails[i][j].h = FLT_MAX;</span><br><span class="line">            cellDetails[i][j].parent_i = <span class="number">-1</span>;</span><br><span class="line">            cellDetails[i][j].parent_j = <span class="number">-1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// Initialising the parameters of the starting node</span></span><br><span class="line">    i = src.first, j = src.second;</span><br><span class="line">    cellDetails[i][j].f = <span class="number">0.0</span>;</span><br><span class="line">    cellDetails[i][j].g = <span class="number">0.0</span>;</span><br><span class="line">    cellDetails[i][j].h = <span class="number">0.0</span>;</span><br><span class="line">    cellDetails[i][j].parent_i = i;</span><br><span class="line">    cellDetails[i][j].parent_j = j;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     Create an open list having information as-</span></span><br><span class="line"><span class="comment">     &lt;f, &lt;i, j&gt;&gt;</span></span><br><span class="line"><span class="comment">     where f = g + h,</span></span><br><span class="line"><span class="comment">     and i, j are the row and column index of that cell</span></span><br><span class="line"><span class="comment">     Note that 0 &lt;= i &lt;= ROW-1 &amp; 0 &lt;= j &lt;= COL-1</span></span><br><span class="line"><span class="comment">     This open list is implenented as a set of pair of</span></span><br><span class="line"><span class="comment">     pair.*/</span></span><br><span class="line">    <span class="built_in">set</span>&lt;pPair&gt; openList;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// Put the starting cell on the open list and set its</span></span><br><span class="line">    <span class="comment">// &#x27;f&#x27; as 0</span></span><br><span class="line">    openList.insert(<span class="built_in">make_pair</span>(<span class="number">0.0</span>, <span class="built_in">make_pair</span>(i, j)));</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// We set this boolean value as false as initially</span></span><br><span class="line">    <span class="comment">// the destination is not reached.</span></span><br><span class="line">    <span class="keyword">bool</span> foundDest = <span class="literal">false</span>;</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">while</span> (!openList.empty()) &#123;</span><br><span class="line">        pPair p = *openList.begin();</span><br><span class="line"> </span><br><span class="line">        <span class="comment">// Remove this vertex from the open list</span></span><br><span class="line">        openList.erase(openList.begin());</span><br><span class="line"> </span><br><span class="line">        <span class="comment">// Add this vertex to the closed list</span></span><br><span class="line">        i = p.second.first;</span><br><span class="line">        j = p.second.second;</span><br><span class="line">        closedList[i][j] = <span class="literal">true</span>;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         Generating all the 8 successor of this cell</span></span><br><span class="line"><span class="comment"> </span></span><br><span class="line"><span class="comment">             N.W   N   N.E</span></span><br><span class="line"><span class="comment">               \   |   /</span></span><br><span class="line"><span class="comment">                \  |  /</span></span><br><span class="line"><span class="comment">             W----Cell----E</span></span><br><span class="line"><span class="comment">                  / | \</span></span><br><span class="line"><span class="comment">                /   |  \</span></span><br><span class="line"><span class="comment">             S.W    S   S.E</span></span><br><span class="line"><span class="comment"> </span></span><br><span class="line"><span class="comment">         Cell--&gt;Popped Cell (i, j)</span></span><br><span class="line"><span class="comment">         N --&gt;  North       (i-1, j)</span></span><br><span class="line"><span class="comment">         S --&gt;  South       (i+1, j)</span></span><br><span class="line"><span class="comment">         E --&gt;  East        (i, j+1)</span></span><br><span class="line"><span class="comment">         W --&gt;  West           (i, j-1)</span></span><br><span class="line"><span class="comment">         N.E--&gt; North-East  (i-1, j+1)</span></span><br><span class="line"><span class="comment">         N.W--&gt; North-West  (i-1, j-1)</span></span><br><span class="line"><span class="comment">         S.E--&gt; South-East  (i+1, j+1)</span></span><br><span class="line"><span class="comment">         S.W--&gt; South-West  (i+1, j-1)*/</span></span><br><span class="line"> </span><br><span class="line">        <span class="comment">// To store the &#x27;g&#x27;, &#x27;h&#x27; and &#x27;f&#x27; of the 8 successors</span></span><br><span class="line">        <span class="keyword">double</span> gNew, hNew, fNew;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//----------- 1st Successor (North) ------------</span></span><br><span class="line"> </span><br><span class="line">        <span class="comment">// Only process this cell if this is a valid one</span></span><br><span class="line">        <span class="keyword">if</span> (isValid(i - <span class="number">1</span>, j) == <span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="comment">// If the destination cell is the same as the</span></span><br><span class="line">            <span class="comment">// current successor</span></span><br><span class="line">            <span class="keyword">if</span> (isDestination(i - <span class="number">1</span>, j, dest) == <span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="comment">// Set the Parent of the destination cell</span></span><br><span class="line">                cellDetails[i - <span class="number">1</span>][j].parent_i = i;</span><br><span class="line">                cellDetails[i - <span class="number">1</span>][j].parent_j = j;</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">&quot;The destination cell is found\n&quot;</span>);</span><br><span class="line">                tracePath(cellDetails, dest);</span><br><span class="line">                foundDest = <span class="literal">true</span>;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// If the successor is already on the closed</span></span><br><span class="line">            <span class="comment">// list or if it is blocked, then ignore it.</span></span><br><span class="line">            <span class="comment">// Else do the following</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (closedList[i - <span class="number">1</span>][j] == <span class="literal">false</span></span><br><span class="line">                     &amp;&amp; isUnBlocked(grid, i - <span class="number">1</span>, j)</span><br><span class="line">                            == <span class="literal">true</span>) &#123;</span><br><span class="line">                gNew = cellDetails[i][j].g + <span class="number">1.0</span>;</span><br><span class="line">                hNew = calculateHValue(i - <span class="number">1</span>, j, dest);</span><br><span class="line">                fNew = gNew + hNew;</span><br><span class="line"> </span><br><span class="line">                <span class="comment">// If it isn’t on the open list, add it to</span></span><br><span class="line">                <span class="comment">// the open list. Make the current square</span></span><br><span class="line">                <span class="comment">// the parent of this square. Record the</span></span><br><span class="line">                <span class="comment">// f, g, and h costs of the square cell</span></span><br><span class="line">                <span class="comment">//                OR</span></span><br><span class="line">                <span class="comment">// If it is on the open list already, check</span></span><br><span class="line">                <span class="comment">// to see if this path to that square is</span></span><br><span class="line">                <span class="comment">// better, using &#x27;f&#x27; cost as the measure.</span></span><br><span class="line">                <span class="keyword">if</span> (cellDetails[i - <span class="number">1</span>][j].f == FLT_MAX</span><br><span class="line">                    || cellDetails[i - <span class="number">1</span>][j].f &gt; fNew) &#123;</span><br><span class="line">                    openList.insert(<span class="built_in">make_pair</span>(</span><br><span class="line">                        fNew, <span class="built_in">make_pair</span>(i - <span class="number">1</span>, j)));</span><br><span class="line"> </span><br><span class="line">                    <span class="comment">// Update the details of this cell</span></span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j].f = fNew;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j].g = gNew;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j].h = hNew;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j].parent_i = i;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j].parent_j = j;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//----------- 2nd Successor (South) ------------</span></span><br><span class="line"> </span><br><span class="line">        <span class="comment">// Only process this cell if this is a valid one</span></span><br><span class="line">        <span class="keyword">if</span> (isValid(i + <span class="number">1</span>, j) == <span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="comment">// If the destination cell is the same as the</span></span><br><span class="line">            <span class="comment">// current successor</span></span><br><span class="line">            <span class="keyword">if</span> (isDestination(i + <span class="number">1</span>, j, dest) == <span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="comment">// Set the Parent of the destination cell</span></span><br><span class="line">                cellDetails[i + <span class="number">1</span>][j].parent_i = i;</span><br><span class="line">                cellDetails[i + <span class="number">1</span>][j].parent_j = j;</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">&quot;The destination cell is found\n&quot;</span>);</span><br><span class="line">                tracePath(cellDetails, dest);</span><br><span class="line">                foundDest = <span class="literal">true</span>;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// If the successor is already on the closed</span></span><br><span class="line">            <span class="comment">// list or if it is blocked, then ignore it.</span></span><br><span class="line">            <span class="comment">// Else do the following</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (closedList[i + <span class="number">1</span>][j] == <span class="literal">false</span></span><br><span class="line">                     &amp;&amp; isUnBlocked(grid, i + <span class="number">1</span>, j)</span><br><span class="line">                            == <span class="literal">true</span>) &#123;</span><br><span class="line">                gNew = cellDetails[i][j].g + <span class="number">1.0</span>;</span><br><span class="line">                hNew = calculateHValue(i + <span class="number">1</span>, j, dest);</span><br><span class="line">                fNew = gNew + hNew;</span><br><span class="line"> </span><br><span class="line">                <span class="comment">// If it isn’t on the open list, add it to</span></span><br><span class="line">                <span class="comment">// the open list. Make the current square</span></span><br><span class="line">                <span class="comment">// the parent of this square. Record the</span></span><br><span class="line">                <span class="comment">// f, g, and h costs of the square cell</span></span><br><span class="line">                <span class="comment">//                OR</span></span><br><span class="line">                <span class="comment">// If it is on the open list already, check</span></span><br><span class="line">                <span class="comment">// to see if this path to that square is</span></span><br><span class="line">                <span class="comment">// better, using &#x27;f&#x27; cost as the measure.</span></span><br><span class="line">                <span class="keyword">if</span> (cellDetails[i + <span class="number">1</span>][j].f == FLT_MAX</span><br><span class="line">                    || cellDetails[i + <span class="number">1</span>][j].f &gt; fNew) &#123;</span><br><span class="line">                    openList.insert(<span class="built_in">make_pair</span>(</span><br><span class="line">                        fNew, <span class="built_in">make_pair</span>(i + <span class="number">1</span>, j)));</span><br><span class="line">                    <span class="comment">// Update the details of this cell</span></span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j].f = fNew;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j].g = gNew;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j].h = hNew;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j].parent_i = i;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j].parent_j = j;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//----------- 3rd Successor (East) ------------</span></span><br><span class="line"> </span><br><span class="line">        <span class="comment">// Only process this cell if this is a valid one</span></span><br><span class="line">        <span class="keyword">if</span> (isValid(i, j + <span class="number">1</span>) == <span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="comment">// If the destination cell is the same as the</span></span><br><span class="line">            <span class="comment">// current successor</span></span><br><span class="line">            <span class="keyword">if</span> (isDestination(i, j + <span class="number">1</span>, dest) == <span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="comment">// Set the Parent of the destination cell</span></span><br><span class="line">                cellDetails[i][j + <span class="number">1</span>].parent_i = i;</span><br><span class="line">                cellDetails[i][j + <span class="number">1</span>].parent_j = j;</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">&quot;The destination cell is found\n&quot;</span>);</span><br><span class="line">                tracePath(cellDetails, dest);</span><br><span class="line">                foundDest = <span class="literal">true</span>;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line"> </span><br><span class="line">            <span class="comment">// If the successor is already on the closed</span></span><br><span class="line">            <span class="comment">// list or if it is blocked, then ignore it.</span></span><br><span class="line">            <span class="comment">// Else do the following</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (closedList[i][j + <span class="number">1</span>] == <span class="literal">false</span></span><br><span class="line">                     &amp;&amp; isUnBlocked(grid, i, j + <span class="number">1</span>)</span><br><span class="line">                            == <span class="literal">true</span>) &#123;</span><br><span class="line">                gNew = cellDetails[i][j].g + <span class="number">1.0</span>;</span><br><span class="line">                hNew = calculateHValue(i, j + <span class="number">1</span>, dest);</span><br><span class="line">                fNew = gNew + hNew;</span><br><span class="line"> </span><br><span class="line">                <span class="comment">// If it isn’t on the open list, add it to</span></span><br><span class="line">                <span class="comment">// the open list. Make the current square</span></span><br><span class="line">                <span class="comment">// the parent of this square. Record the</span></span><br><span class="line">                <span class="comment">// f, g, and h costs of the square cell</span></span><br><span class="line">                <span class="comment">//                OR</span></span><br><span class="line">                <span class="comment">// If it is on the open list already, check</span></span><br><span class="line">                <span class="comment">// to see if this path to that square is</span></span><br><span class="line">                <span class="comment">// better, using &#x27;f&#x27; cost as the measure.</span></span><br><span class="line">                <span class="keyword">if</span> (cellDetails[i][j + <span class="number">1</span>].f == FLT_MAX</span><br><span class="line">                    || cellDetails[i][j + <span class="number">1</span>].f &gt; fNew) &#123;</span><br><span class="line">                    openList.insert(<span class="built_in">make_pair</span>(</span><br><span class="line">                        fNew, <span class="built_in">make_pair</span>(i, j + <span class="number">1</span>)));</span><br><span class="line"> </span><br><span class="line">                    <span class="comment">// Update the details of this cell</span></span><br><span class="line">                    cellDetails[i][j + <span class="number">1</span>].f = fNew;</span><br><span class="line">                    cellDetails[i][j + <span class="number">1</span>].g = gNew;</span><br><span class="line">                    cellDetails[i][j + <span class="number">1</span>].h = hNew;</span><br><span class="line">                    cellDetails[i][j + <span class="number">1</span>].parent_i = i;</span><br><span class="line">                    cellDetails[i][j + <span class="number">1</span>].parent_j = j;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//----------- 4th Successor (West) ------------</span></span><br><span class="line"> </span><br><span class="line">        <span class="comment">// Only process this cell if this is a valid one</span></span><br><span class="line">        <span class="keyword">if</span> (isValid(i, j - <span class="number">1</span>) == <span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="comment">// If the destination cell is the same as the</span></span><br><span class="line">            <span class="comment">// current successor</span></span><br><span class="line">            <span class="keyword">if</span> (isDestination(i, j - <span class="number">1</span>, dest) == <span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="comment">// Set the Parent of the destination cell</span></span><br><span class="line">                cellDetails[i][j - <span class="number">1</span>].parent_i = i;</span><br><span class="line">                cellDetails[i][j - <span class="number">1</span>].parent_j = j;</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">&quot;The destination cell is found\n&quot;</span>);</span><br><span class="line">                tracePath(cellDetails, dest);</span><br><span class="line">                foundDest = <span class="literal">true</span>;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line"> </span><br><span class="line">            <span class="comment">// If the successor is already on the closed</span></span><br><span class="line">            <span class="comment">// list or if it is blocked, then ignore it.</span></span><br><span class="line">            <span class="comment">// Else do the following</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (closedList[i][j - <span class="number">1</span>] == <span class="literal">false</span></span><br><span class="line">                     &amp;&amp; isUnBlocked(grid, i, j - <span class="number">1</span>)</span><br><span class="line">                            == <span class="literal">true</span>) &#123;</span><br><span class="line">                gNew = cellDetails[i][j].g + <span class="number">1.0</span>;</span><br><span class="line">                hNew = calculateHValue(i, j - <span class="number">1</span>, dest);</span><br><span class="line">                fNew = gNew + hNew;</span><br><span class="line"> </span><br><span class="line">                <span class="comment">// If it isn’t on the open list, add it to</span></span><br><span class="line">                <span class="comment">// the open list. Make the current square</span></span><br><span class="line">                <span class="comment">// the parent of this square. Record the</span></span><br><span class="line">                <span class="comment">// f, g, and h costs of the square cell</span></span><br><span class="line">                <span class="comment">//                OR</span></span><br><span class="line">                <span class="comment">// If it is on the open list already, check</span></span><br><span class="line">                <span class="comment">// to see if this path to that square is</span></span><br><span class="line">                <span class="comment">// better, using &#x27;f&#x27; cost as the measure.</span></span><br><span class="line">                <span class="keyword">if</span> (cellDetails[i][j - <span class="number">1</span>].f == FLT_MAX</span><br><span class="line">                    || cellDetails[i][j - <span class="number">1</span>].f &gt; fNew) &#123;</span><br><span class="line">                    openList.insert(<span class="built_in">make_pair</span>(</span><br><span class="line">                        fNew, <span class="built_in">make_pair</span>(i, j - <span class="number">1</span>)));</span><br><span class="line"> </span><br><span class="line">                    <span class="comment">// Update the details of this cell</span></span><br><span class="line">                    cellDetails[i][j - <span class="number">1</span>].f = fNew;</span><br><span class="line">                    cellDetails[i][j - <span class="number">1</span>].g = gNew;</span><br><span class="line">                    cellDetails[i][j - <span class="number">1</span>].h = hNew;</span><br><span class="line">                    cellDetails[i][j - <span class="number">1</span>].parent_i = i;</span><br><span class="line">                    cellDetails[i][j - <span class="number">1</span>].parent_j = j;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//----------- 5th Successor (North-East)</span></span><br><span class="line">        <span class="comment">//------------</span></span><br><span class="line"> </span><br><span class="line">        <span class="comment">// Only process this cell if this is a valid one</span></span><br><span class="line">        <span class="keyword">if</span> (isValid(i - <span class="number">1</span>, j + <span class="number">1</span>) == <span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="comment">// If the destination cell is the same as the</span></span><br><span class="line">            <span class="comment">// current successor</span></span><br><span class="line">            <span class="keyword">if</span> (isDestination(i - <span class="number">1</span>, j + <span class="number">1</span>, dest) == <span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="comment">// Set the Parent of the destination cell</span></span><br><span class="line">                cellDetails[i - <span class="number">1</span>][j + <span class="number">1</span>].parent_i = i;</span><br><span class="line">                cellDetails[i - <span class="number">1</span>][j + <span class="number">1</span>].parent_j = j;</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">&quot;The destination cell is found\n&quot;</span>);</span><br><span class="line">                tracePath(cellDetails, dest);</span><br><span class="line">                foundDest = <span class="literal">true</span>;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line"> </span><br><span class="line">            <span class="comment">// If the successor is already on the closed</span></span><br><span class="line">            <span class="comment">// list or if it is blocked, then ignore it.</span></span><br><span class="line">            <span class="comment">// Else do the following</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (closedList[i - <span class="number">1</span>][j + <span class="number">1</span>] == <span class="literal">false</span></span><br><span class="line">                     &amp;&amp; isUnBlocked(grid, i - <span class="number">1</span>, j + <span class="number">1</span>)</span><br><span class="line">                            == <span class="literal">true</span>) &#123;</span><br><span class="line">                gNew = cellDetails[i][j].g + <span class="number">1.414</span>;</span><br><span class="line">                hNew = calculateHValue(i - <span class="number">1</span>, j + <span class="number">1</span>, dest);</span><br><span class="line">                fNew = gNew + hNew;</span><br><span class="line"> </span><br><span class="line">                <span class="comment">// If it isn’t on the open list, add it to</span></span><br><span class="line">                <span class="comment">// the open list. Make the current square</span></span><br><span class="line">                <span class="comment">// the parent of this square. Record the</span></span><br><span class="line">                <span class="comment">// f, g, and h costs of the square cell</span></span><br><span class="line">                <span class="comment">//                OR</span></span><br><span class="line">                <span class="comment">// If it is on the open list already, check</span></span><br><span class="line">                <span class="comment">// to see if this path to that square is</span></span><br><span class="line">                <span class="comment">// better, using &#x27;f&#x27; cost as the measure.</span></span><br><span class="line">                <span class="keyword">if</span> (cellDetails[i - <span class="number">1</span>][j + <span class="number">1</span>].f == FLT_MAX</span><br><span class="line">                    || cellDetails[i - <span class="number">1</span>][j + <span class="number">1</span>].f &gt; fNew) &#123;</span><br><span class="line">                    openList.insert(<span class="built_in">make_pair</span>(</span><br><span class="line">                        fNew, <span class="built_in">make_pair</span>(i - <span class="number">1</span>, j + <span class="number">1</span>)));</span><br><span class="line"> </span><br><span class="line">                    <span class="comment">// Update the details of this cell</span></span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j + <span class="number">1</span>].f = fNew;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j + <span class="number">1</span>].g = gNew;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j + <span class="number">1</span>].h = hNew;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j + <span class="number">1</span>].parent_i = i;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j + <span class="number">1</span>].parent_j = j;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//----------- 6th Successor (North-West)</span></span><br><span class="line">        <span class="comment">//------------</span></span><br><span class="line"> </span><br><span class="line">        <span class="comment">// Only process this cell if this is a valid one</span></span><br><span class="line">        <span class="keyword">if</span> (isValid(i - <span class="number">1</span>, j - <span class="number">1</span>) == <span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="comment">// If the destination cell is the same as the</span></span><br><span class="line">            <span class="comment">// current successor</span></span><br><span class="line">            <span class="keyword">if</span> (isDestination(i - <span class="number">1</span>, j - <span class="number">1</span>, dest) == <span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="comment">// Set the Parent of the destination cell</span></span><br><span class="line">                cellDetails[i - <span class="number">1</span>][j - <span class="number">1</span>].parent_i = i;</span><br><span class="line">                cellDetails[i - <span class="number">1</span>][j - <span class="number">1</span>].parent_j = j;</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">&quot;The destination cell is found\n&quot;</span>);</span><br><span class="line">                tracePath(cellDetails, dest);</span><br><span class="line">                foundDest = <span class="literal">true</span>;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line"> </span><br><span class="line">            <span class="comment">// If the successor is already on the closed</span></span><br><span class="line">            <span class="comment">// list or if it is blocked, then ignore it.</span></span><br><span class="line">            <span class="comment">// Else do the following</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (closedList[i - <span class="number">1</span>][j - <span class="number">1</span>] == <span class="literal">false</span></span><br><span class="line">                     &amp;&amp; isUnBlocked(grid, i - <span class="number">1</span>, j - <span class="number">1</span>)</span><br><span class="line">                            == <span class="literal">true</span>) &#123;</span><br><span class="line">                gNew = cellDetails[i][j].g + <span class="number">1.414</span>;</span><br><span class="line">                hNew = calculateHValue(i - <span class="number">1</span>, j - <span class="number">1</span>, dest);</span><br><span class="line">                fNew = gNew + hNew;</span><br><span class="line"> </span><br><span class="line">                <span class="comment">// If it isn’t on the open list, add it to</span></span><br><span class="line">                <span class="comment">// the open list. Make the current square</span></span><br><span class="line">                <span class="comment">// the parent of this square. Record the</span></span><br><span class="line">                <span class="comment">// f, g, and h costs of the square cell</span></span><br><span class="line">                <span class="comment">//                OR</span></span><br><span class="line">                <span class="comment">// If it is on the open list already, check</span></span><br><span class="line">                <span class="comment">// to see if this path to that square is</span></span><br><span class="line">                <span class="comment">// better, using &#x27;f&#x27; cost as the measure.</span></span><br><span class="line">                <span class="keyword">if</span> (cellDetails[i - <span class="number">1</span>][j - <span class="number">1</span>].f == FLT_MAX</span><br><span class="line">                    || cellDetails[i - <span class="number">1</span>][j - <span class="number">1</span>].f &gt; fNew) &#123;</span><br><span class="line">                    openList.insert(<span class="built_in">make_pair</span>(</span><br><span class="line">                        fNew, <span class="built_in">make_pair</span>(i - <span class="number">1</span>, j - <span class="number">1</span>)));</span><br><span class="line">                    <span class="comment">// Update the details of this cell</span></span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j - <span class="number">1</span>].f = fNew;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j - <span class="number">1</span>].g = gNew;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j - <span class="number">1</span>].h = hNew;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j - <span class="number">1</span>].parent_i = i;</span><br><span class="line">                    cellDetails[i - <span class="number">1</span>][j - <span class="number">1</span>].parent_j = j;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//----------- 7th Successor (South-East)</span></span><br><span class="line">        <span class="comment">//------------</span></span><br><span class="line"> </span><br><span class="line">        <span class="comment">// Only process this cell if this is a valid one</span></span><br><span class="line">        <span class="keyword">if</span> (isValid(i + <span class="number">1</span>, j + <span class="number">1</span>) == <span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="comment">// If the destination cell is the same as the</span></span><br><span class="line">            <span class="comment">// current successor</span></span><br><span class="line">            <span class="keyword">if</span> (isDestination(i + <span class="number">1</span>, j + <span class="number">1</span>, dest) == <span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="comment">// Set the Parent of the destination cell</span></span><br><span class="line">                cellDetails[i + <span class="number">1</span>][j + <span class="number">1</span>].parent_i = i;</span><br><span class="line">                cellDetails[i + <span class="number">1</span>][j + <span class="number">1</span>].parent_j = j;</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">&quot;The destination cell is found\n&quot;</span>);</span><br><span class="line">                tracePath(cellDetails, dest);</span><br><span class="line">                foundDest = <span class="literal">true</span>;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line"> </span><br><span class="line">            <span class="comment">// If the successor is already on the closed</span></span><br><span class="line">            <span class="comment">// list or if it is blocked, then ignore it.</span></span><br><span class="line">            <span class="comment">// Else do the following</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (closedList[i + <span class="number">1</span>][j + <span class="number">1</span>] == <span class="literal">false</span></span><br><span class="line">                     &amp;&amp; isUnBlocked(grid, i + <span class="number">1</span>, j + <span class="number">1</span>)</span><br><span class="line">                            == <span class="literal">true</span>) &#123;</span><br><span class="line">                gNew = cellDetails[i][j].g + <span class="number">1.414</span>;</span><br><span class="line">                hNew = calculateHValue(i + <span class="number">1</span>, j + <span class="number">1</span>, dest);</span><br><span class="line">                fNew = gNew + hNew;</span><br><span class="line"> </span><br><span class="line">                <span class="comment">// If it isn’t on the open list, add it to</span></span><br><span class="line">                <span class="comment">// the open list. Make the current square</span></span><br><span class="line">                <span class="comment">// the parent of this square. Record the</span></span><br><span class="line">                <span class="comment">// f, g, and h costs of the square cell</span></span><br><span class="line">                <span class="comment">//                OR</span></span><br><span class="line">                <span class="comment">// If it is on the open list already, check</span></span><br><span class="line">                <span class="comment">// to see if this path to that square is</span></span><br><span class="line">                <span class="comment">// better, using &#x27;f&#x27; cost as the measure.</span></span><br><span class="line">                <span class="keyword">if</span> (cellDetails[i + <span class="number">1</span>][j + <span class="number">1</span>].f == FLT_MAX</span><br><span class="line">                    || cellDetails[i + <span class="number">1</span>][j + <span class="number">1</span>].f &gt; fNew) &#123;</span><br><span class="line">                    openList.insert(<span class="built_in">make_pair</span>(</span><br><span class="line">                        fNew, <span class="built_in">make_pair</span>(i + <span class="number">1</span>, j + <span class="number">1</span>)));</span><br><span class="line"> </span><br><span class="line">                    <span class="comment">// Update the details of this cell</span></span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j + <span class="number">1</span>].f = fNew;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j + <span class="number">1</span>].g = gNew;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j + <span class="number">1</span>].h = hNew;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j + <span class="number">1</span>].parent_i = i;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j + <span class="number">1</span>].parent_j = j;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"> </span><br><span class="line">        <span class="comment">//----------- 8th Successor (South-West)</span></span><br><span class="line">        <span class="comment">//------------</span></span><br><span class="line"> </span><br><span class="line">        <span class="comment">// Only process this cell if this is a valid one</span></span><br><span class="line">        <span class="keyword">if</span> (isValid(i + <span class="number">1</span>, j - <span class="number">1</span>) == <span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="comment">// If the destination cell is the same as the</span></span><br><span class="line">            <span class="comment">// current successor</span></span><br><span class="line">            <span class="keyword">if</span> (isDestination(i + <span class="number">1</span>, j - <span class="number">1</span>, dest) == <span class="literal">true</span>) &#123;</span><br><span class="line">                <span class="comment">// Set the Parent of the destination cell</span></span><br><span class="line">                cellDetails[i + <span class="number">1</span>][j - <span class="number">1</span>].parent_i = i;</span><br><span class="line">                cellDetails[i + <span class="number">1</span>][j - <span class="number">1</span>].parent_j = j;</span><br><span class="line">                <span class="built_in">printf</span>(<span class="string">&quot;The destination cell is found\n&quot;</span>);</span><br><span class="line">                tracePath(cellDetails, dest);</span><br><span class="line">                foundDest = <span class="literal">true</span>;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line"> </span><br><span class="line">            <span class="comment">// If the successor is already on the closed</span></span><br><span class="line">            <span class="comment">// list or if it is blocked, then ignore it.</span></span><br><span class="line">            <span class="comment">// Else do the following</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (closedList[i + <span class="number">1</span>][j - <span class="number">1</span>] == <span class="literal">false</span></span><br><span class="line">                     &amp;&amp; isUnBlocked(grid, i + <span class="number">1</span>, j - <span class="number">1</span>)</span><br><span class="line">                            == <span class="literal">true</span>) &#123;</span><br><span class="line">                gNew = cellDetails[i][j].g + <span class="number">1.414</span>;</span><br><span class="line">                hNew = calculateHValue(i + <span class="number">1</span>, j - <span class="number">1</span>, dest);</span><br><span class="line">                fNew = gNew + hNew;</span><br><span class="line"> </span><br><span class="line">                <span class="comment">// If it isn’t on the open list, add it to</span></span><br><span class="line">                <span class="comment">// the open list. Make the current square</span></span><br><span class="line">                <span class="comment">// the parent of this square. Record the</span></span><br><span class="line">                <span class="comment">// f, g, and h costs of the square cell</span></span><br><span class="line">                <span class="comment">//                OR</span></span><br><span class="line">                <span class="comment">// If it is on the open list already, check</span></span><br><span class="line">                <span class="comment">// to see if this path to that square is</span></span><br><span class="line">                <span class="comment">// better, using &#x27;f&#x27; cost as the measure.</span></span><br><span class="line">                <span class="keyword">if</span> (cellDetails[i + <span class="number">1</span>][j - <span class="number">1</span>].f == FLT_MAX</span><br><span class="line">                    || cellDetails[i + <span class="number">1</span>][j - <span class="number">1</span>].f &gt; fNew) &#123;</span><br><span class="line">                    openList.insert(<span class="built_in">make_pair</span>(</span><br><span class="line">                        fNew, <span class="built_in">make_pair</span>(i + <span class="number">1</span>, j - <span class="number">1</span>)));</span><br><span class="line"> </span><br><span class="line">                    <span class="comment">// Update the details of this cell</span></span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j - <span class="number">1</span>].f = fNew;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j - <span class="number">1</span>].g = gNew;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j - <span class="number">1</span>].h = hNew;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j - <span class="number">1</span>].parent_i = i;</span><br><span class="line">                    cellDetails[i + <span class="number">1</span>][j - <span class="number">1</span>].parent_j = j;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// When the destination cell is not found and the open</span></span><br><span class="line">    <span class="comment">// list is empty, then we conclude that we failed to</span></span><br><span class="line">    <span class="comment">// reach the destiantion cell. This may happen when the</span></span><br><span class="line">    <span class="comment">// there is no way to destination cell (due to</span></span><br><span class="line">    <span class="comment">// blockages)</span></span><br><span class="line">    <span class="keyword">if</span> (foundDest == <span class="literal">false</span>)</span><br><span class="line">        <span class="built_in">printf</span>(<span class="string">&quot;Failed to find the Destination Cell\n&quot;</span>);</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br><span class="line"> </span><br><span class="line"><span class="comment">// Driver program to test above function</span></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="comment">/* Description of the Grid-</span></span><br><span class="line"><span class="comment">     1--&gt; The cell is not blocked</span></span><br><span class="line"><span class="comment">     0--&gt; The cell is blocked    */</span></span><br><span class="line">    <span class="keyword">int</span> grid[ROW][COL]</span><br><span class="line">        = &#123; &#123; <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span> &#125;,</span><br><span class="line">            &#123; <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span> &#125;,</span><br><span class="line">            &#123; <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span> &#125;,</span><br><span class="line">            &#123; <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span> &#125;,</span><br><span class="line">            &#123; <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span> &#125;,</span><br><span class="line">            &#123; <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span> &#125;,</span><br><span class="line">            &#123; <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span> &#125;,</span><br><span class="line">            &#123; <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span> &#125;,</span><br><span class="line">            &#123; <span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span> &#125; &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Source is the left-most bottom-most corner</span></span><br><span class="line">    Pair src = <span class="built_in">make_pair</span>(<span class="number">8</span>, <span class="number">0</span>);</span><br><span class="line"> </span><br><span class="line">    <span class="comment">// Destination is the left-most top-most corner</span></span><br><span class="line">    Pair dest = <span class="built_in">make_pair</span>(<span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line"> </span><br><span class="line">    aStarSearch(grid, src, dest);</span><br><span class="line"> </span><br><span class="line">    <span class="keyword">return</span> (<span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="A-搜尋算法可以保證永遠返回最佳路徑嗎？"><a href="#A-搜尋算法可以保證永遠返回最佳路徑嗎？" class="headerlink" title="A* 搜尋算法可以保證永遠返回最佳路徑嗎？"></a>A* 搜尋算法可以保證永遠返回最佳路徑嗎？</h3><p>可以的，只要 h(x) 不要高於當前點與終點的實際距離就行。 原理是只要最佳路徑中的方格永遠不要被高估，就不會掉進 Close list，一直被加入 Open list並探索，直到抵達終點，基於算法永遠先取最小 f(x) 的特性，返路的路徑然是最佳路徑之一。</p>
+<h3 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h3><p>遊戲！如塔防遊戲或一般有 NPC 移動的和自動尋路功能的遊戲，都可能用到了 A* 搜尋算法。</p>
+<h3 id="如果地圖不是方格面是一張不規則的圖呢？"><a href="#如果地圖不是方格面是一張不規則的圖呢？" class="headerlink" title="如果地圖不是方格面是一張不規則的圖呢？"></a>如果地圖不是方格面是一張不規則的圖呢？</h3><p>原理是一樣的，只要用好 <code>f(x)=g(x)+h(x)</code> 就行。</p>
+<h3 id="總結"><a href="#總結" class="headerlink" title="總結"></a>總結</h3><p>我們了解到什麼是A* 搜尋算法，探討了它的原理、算法步驟、常用的啟發函數和應用例子。</p>
+]]></content>
+      <categories>
+        <category>教學</category>
+      </categories>
+      <tags>
+        <tag>A*</tag>
+        <tag>C++</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>《考試腦科學》讀後筆記 - 天才的秘密</title>
+    <url>/2022/02/04/brain-science-note/</url>
+    <content><![CDATA[<p>想要有高效的記憶法，關鍵在於如何掌握知識的本質和把短期記憶轉化成長期記憶。</p>
+<a id="more"></a>
+
+<img src="brain_cover.png" width="20%">
+作者:池谷裕二
+
+<p>看完書後我整理了書的內容和加上一些自己的見解，總結出下面7個學習的正確方法，輔以9個小技巧提高學習效率。經常煩惱記憶力差的讀者可以看一下。<strong>堅持以下方法至少3個月才會有效果</strong>。</p>
+<h1 id="術語"><a href="#術語" class="headerlink" title="術語"></a>術語</h1><p><strong>海馬體</strong>:根據信息對生存而言，是否不可或缺來判決信息是屬於”必要記憶”或”非必要記憶”<br><strong>杏仁核</strong>:產生情緒；激活容易引神經元的LTP；人在情緒高漲時更容易記憶(正面和負面)<br><strong>記憶恢復現象</strong>:相對於剛則學習的新知識，沉睡於大腦某處的知識更容易被回憶起來<br><strong>遺忘曲線</strong>:人們在記住信息後4小時內會忘掉一半，1天後會忘掉70%，2天後會忘掉80%<br><strong>LTP (long term potentiation)</strong> :神經元被刺激後，長期激活的現象；可提高專注力和記憶力，但無法承受壓力<br><strong>θ波</strong>:當處於好奇，緊張，興奮，期待，憧憬時，人腦會產生θ波，可以增加LTP效應<br><strong>知識記憶</strong>:暫存腦中的短期記憶，容易忘記<br><strong>經驗記憶</strong>:由自身歷過形成的長期記憶，可以記憶很長的時間<br><strong>方法記憶</strong>:本能記憶；通過實踐，大腦無意識中形成的記憶；難以說明，難以遺忘</p>
+<h1 id="方法"><a href="#方法" class="headerlink" title="方法"></a>方法</h1><p><strong>1.復習</strong><br>原理:海馬體會將積極持續重複輸入和輸出的信息視為重要信息，從而使之變成長期記憶<br>-潛在記憶會保存約一個月，需在一個月內復習知識，不然復習就沒效果<br>-人腦記憶是輸出依賴型，要留住記憶就不能忽視輸出（默寫，測試，寫筆記）<br>-反復刺激海馬體才可產生 LTP，所以復習是必要的<br>復習方法:<br>    第1次復習:學習後的第2天<br>    第2次復習:第1次復習1周後<br>    第3次復習:第2次復習2周後<br>    第4次復習:第3次復習1個月後</p>
+<p><strong>2.喚醒情緒</strong><br>原理:人腦容易記住帶有情緒的信息；透過刺激杏仁核產生LTP；情緒高漲會促使海馬體產生θ波<br><strong>不正經學習法</strong>:學習時把知識聯想到一些’不正經’的事物來調動情緒刺激杏仁核<br><strong>感動式學習法</strong>:帶有感情去記憶知識，例如代入書中人物的經歷</p>
+<p><strong>3.睡眠</strong><br>原理:海馬體會在人睡眠時會整理記憶和產生θ波鞏固記憶<br>-學習新知識後要有充足的睡眠，不然很快會忘掉，趁還沒忘掉趕緊睡覺<br>-在睡前1-2小時學習，如把題目看一遍<br>-睡不著可以放空腦袋，有同樣效果<br><strong>分散學習</strong>:將學習分散在不同時段進行，中間插入睡眠，降低遺忘速度</p>
+<p><strong>4.循序漸進式學習</strong><br>原理:適應大腦的模糊記憶機制（為了記住相似/相關的事物，首先忘掉不相似/相關的事物），慢慢掌握事件關聯的過程和本質<br>詳細分解教學步驟，再循序漸進，接照步驟記憶，像教科書一樣</p>
+<p><strong>5.遷移學習</strong><br>原理:先完全掌握擅長科目的理解方法（方法記憶），保留事件本質的策略，再應用到其他科目，令學習變得簡單<br>-學習水平越高，遷移效果越好<br>-記憶的東西越多，腦袋越好用（大腦對兩種不同的知識互相遷移學習，效果增長呈指數級）<br>-<strong>印謂的天才就是善於使用遷移學習並掌握方法記憶的人</strong><br>例子:會踏自行車的人，很快就可以學會駕駛電單車；會駕駛電單車的人，很快就可以學會踏自行車；同時會踏自行車和駕駛電單車的人技術一般都很好。因為大腦掌握了在車上保持平衡的方法記憶，這種保持平衡的策略可以遷移應用到其他類似的交通工具，學習也是如此</p>
+<p><strong>6.改變記憶的方法</strong><br>原理:人腦容易回想與自身經驗有關的記憶（經驗記憶），難以回想信息類的記憶（知識記憶）；把知識記憶轉成經驗記憶，使知識容易回想<br><strong>聯想記憶法</strong>:<br>    -把知識和個人信息、經驗、周邊環境、諧音等互相關聯，使其性質變成經驗記憶<br>    -關聯越多，越容易回想<br>    -發揮想像力，把知識形像化；”想像”這行為可以刺激到海馬體<br><strong>經驗記憶法</strong>:<br>    -向別人講述知識，使知識變成經驗記憶的一部份<br>    -講述知識即輸出 -&gt; 人腦記憶是輸出依賴型 -&gt; 加強記憶<br><strong>多感官學習法</strong>:<br>    -把知識關聯多種感官，形成經驗記憶<br>    -使用耳朵學習比使用眼睛學習效率要高<br>    -看書時（視覺），動筆寫（觸覺），出聲讀（聽覺），反覆輸出，加強記憶</p>
+<p><strong>7.不要短時間內輸入大量知識</strong><br>原理:人腦一次過記住的信息量有限；新舊記憶會互相干擾 (記憶混亂)，添加記憶容易導致之前的記憶提前消失<br>-避免一天內輸入大量的新知識<br>-復習和睡眠可以降低忘記知識的速度</p>
+<h1 id="小技巧"><a href="#小技巧" class="headerlink" title="小技巧"></a>小技巧</h1><p><strong>1.學習前聽莫扎特的音樂</strong><br>莫扎特效應:聽了莫扎特的音樂後，使人一小時內變得聰明</p>
+<p><strong>2.自我激勵</strong><br>在視線中出現積極向上的鼓勵語，可以鼓舞人心</p>
+<p><strong>3.不要在無聲空間中學習</strong><br>動物一般有無聲空間中無法集中，且學習能力會下降</p>
+<p><strong>4.學習前吃糖或香口膠</strong><br>汲收葡萄糖可以活躍腦袋</p>
+<p><strong>5.設立可實現的目標</strong><br>設立容易實現的目標激勵自己，提高自信，避免失敗產生的挫敗感，提高學習動力</p>
+<p><strong>6.星期五效應</strong><br>按照生物節律，在周五和周六學習效率最好</p>
+<p><strong>7.組塊化信息</strong><br>將信息劃分為多個小組以便於記憶<br>例如:853972641 -&gt; 853-972-641</p>
+<p><strong>8.想到就行動並堅持一陣子</strong><br>刺激伏隔核，產生”行動興奮”現象<br>行動興奮: 一旦開始行動，狀態會漸入佳境，注意力能夠提升</p>
+<p><strong>9.利用動物本能</strong><br>動物在饑餓，寒冷，走動（捕獵）時會產生θ波和LTP；動物天生畏懼血（紅色）<br>獅子記憶法:動物在饑餓，寒冷，捕獵時會產生危機感來刺激海馬體；在饑餓（飯前），寒冷（冷氣房間），走動（可以坐車）的狀態下學習<br>避開紅色:紅色具有降IQ，削弱勇氣的效果；不要讓自己學習的環境出現紅色</p>
+]]></content>
+      <categories>
+        <category>開卷有益</category>
+      </categories>
+      <tags>
+        <tag>記憶法</tag>
+        <tag>大腦</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用 Adblock 的代價</title>
+    <url>/2021/02/18/chrome-adblock-bug/</url>
+    <content><![CDATA[<p>使用 Adblock 插件有幾會導致網站功能或排版出錯。事源這個 Blog 上的 Scroll to Top Button 功能失效上。 經過 Debug，發現是由 Chrome 的 Adblock plugin 所導致的。 </p>
+<a id="more"></a>
+<p>以下是過程：</p>
+<hr>
+<h3 id="檢查-HTML"><a href="#檢查-HTML" class="headerlink" title="檢查 HTML"></a>檢查 HTML</h3><p>發現 Scroll to Top Button 的 Tag 有好好生成到出來。</p>
+<img src="html_code.png" width="70%">
+
+<h3 id="檢查-CSS"><a href="#檢查-CSS" class="headerlink" title="檢查 CSS"></a>檢查 CSS</h3><p>發現 Display 設定成 None，怪不得顯示不出來。</p>
+<img src="css_code.png" width="70%">
+
+<h3 id="檢查相關-CSS-來源"><a href="#檢查相關-CSS-來源" class="headerlink" title="檢查相關 CSS 來源"></a>檢查相關 CSS 來源</h3><p>發現引入了 injected stylesheet，class 名稱剛好相撞。一般面言 injected stylesheet 是來自 Browser 的 Plugin。</p>
+<img src="injected_css_1.png" width="70%">
+<img src="injected_css_2.png" width="70%">
+<img src="injected_css_3.png" width="70%">
+
+<h3 id="檢查相關-injected-stylesheet"><a href="#檢查相關-injected-stylesheet" class="headerlink" title="檢查相關 injected stylesheet"></a>檢查相關 injected stylesheet</h3><p>每個 Plugin 一一排除測試，發現是 Adblock 是兇手。</p>
+<img src="adblock.png" width="30%">
+
+<h3 id="解決方法"><a href="#解決方法" class="headerlink" title="解決方法"></a>解決方法</h3><ol>
+<li>關掉 Adblock</li>
+<li>更改 Class name</li>
+</ol>
+<p>我會推薦第二種方法，因為你不能要求所有用戶都關掉 Plugin。</p>
+]]></content>
+      <categories>
+        <category>筆記</category>
+      </categories>
+      <tags>
+        <tag>Debug</tag>
+        <tag>Chrome</tag>
+        <tag>Adblock</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>部署 Apahce2 + Flask 到 Production Server</title>
+    <url>/2021/03/31/deploy-apache2-flask/</url>
+    <content><![CDATA[<p>因工作需要為程序提供 Web service，故採用了 Apahce2 和 Flask 為 Python 程式提供高效穩定，用於生產的 Web 服務。</p>
+<a id="more"></a>
+<p>教學適用於一般 Linux 系統。</p>
+<h3 id="STEP-1-安裝-Apache2"><a href="#STEP-1-安裝-Apache2" class="headerlink" title="STEP 1: 安裝 Apache2"></a>STEP 1: 安裝 Apache2</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install apache2</span><br><span class="line">sudo apt-get install -y apache2-dev</span><br></pre></td></tr></table></figure>
+
+<h3 id="STEP-2-安裝-Flask"><a href="#STEP-2-安裝-Flask" class="headerlink" title="STEP 2: 安裝 Flask"></a>STEP 2: 安裝 Flask</h3><p>部分系統可能已預先安裝了 Python3，使用下面指令檢查。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">python3 -V</span><br></pre></td></tr></table></figure>
+
+<p>如沒則先安裝 Python3，再安裝 Flask。這裡安裝的是 Python3.6。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install python3.6</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo pip3 install flask</span><br></pre></td></tr></table></figure>
+
+<h3 id="STEP-3-安裝-mod-wsgi"><a href="#STEP-3-安裝-mod-wsgi" class="headerlink" title="STEP 3: 安裝 mod_wsgi"></a>STEP 3: 安裝 mod_wsgi</h3><p>需要使用 mod_wsgi 套件作為中介軟件連接 Apahce2(伺服器) 和 Python(應用程式)。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo pip3 install mod_wsgi</span><br></pre></td></tr></table></figure>
+
+<h3 id="STEP-4-設定-Python-程式和-wsgi-文件"><a href="#STEP-4-設定-Python-程式和-wsgi-文件" class="headerlink" title="STEP 4: 設定 Python 程式和 wsgi 文件"></a>STEP 4: 設定 Python 程式和 wsgi 文件</h3><p>這裡是重中之重，我們簡單建立一個測試程式 app.py：</p>
+<figure class="highlight python"><figcaption><span>app.py</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/local/bin/python3</span></span><br><span class="line"><span class="comment"># -*- encoding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</span><br><span class="line"></span><br><span class="line"><span class="comment"># init</span></span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"><span class="comment"># routing</span></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/&#x27;</span></span>)</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">index</span>():</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;hello world&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    app.run()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>在同一目錄建立 flaskapp.wsgi</p>
+<figure class="highlight python"><figcaption><span>flaskapp.wsgi</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="comment">#!/usr/local/bin/python3</span></span><br><span class="line"><span class="comment"># -*- encoding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> sys, os</span><br><span class="line">sys.path.insert(<span class="number">0</span>, os.path.dirname(__file__))</span><br><span class="line"><span class="keyword">from</span> app <span class="keyword">import</span> app</span><br><span class="line">application = app</span><br></pre></td></tr></table></figure>
+
+<h3 id="STEP-5-設定-Apache2"><a href="#STEP-5-設定-Apache2" class="headerlink" title="STEP 5: 設定 Apache2"></a>STEP 5: 設定 Apache2</h3><p>輸入指令 <code>mod_wsgi-express module-config</code> 會得到下面類似的東西：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">LoadModule wsgi_module &quot;&#x2F;usr&#x2F;local&#x2F;lib&#x2F;python3.6&#x2F;dist-packages&#x2F;mod_wsgi&#x2F;server&#x2F;mod_wsgi-py36.cpython-36m-x86_64-linux-gnu.so&quot;</span><br><span class="line">WSGIPythonHome &quot;&#x2F;usr&quot;</span><br></pre></td></tr></table></figure>
+<p>在 /etc/apache2/mods-available 建立 <code>wsgi.load</code>，複製貼上上面內容。</p>
+<figure class="highlight plain"><figcaption><span>/etc/apache2/mods-available/wsgi.load</span></figcaption><table><tr><td class="code"><pre><span class="line">LoadModule wsgi_module &quot;&#x2F;usr&#x2F;local&#x2F;lib&#x2F;python3.6&#x2F;dist-packages&#x2F;mod_wsgi&#x2F;server&#x2F;mod_wsgi-py36.cpython-36m-x86_64-linux-gnu.so&quot;</span><br><span class="line">WSGIPythonHome &quot;&#x2F;usr&quot;</span><br></pre></td></tr></table></figure>
+<p>這裡目的是讓 Apache2 啓用 wsgi 模組。</p>
+<p>在 /etc/apache2/sites-available 建立 <code>botnotes.conf</code> 並複製貼上內容。這裡的每個設定都是有意義的，具體作用可以參考<a href="https://modwsgi.readthedocs.io/en/master/">官網</a>。 這裡是用來定義Python 程式使用 Apache2 的一些參數。</p>
+<figure class="highlight plain"><figcaption><span>/etc/apache2/sites-available/botnotes.conf</span></figcaption><table><tr><td class="code"><pre><span class="line">&lt;virtualhost *:80&gt;</span><br><span class="line">    # xx.xx.xx.xx 為你的IP</span><br><span class="line">    ServerName xx.xx.xx.xx</span><br><span class="line"></span><br><span class="line">    # process group name 設定為 botnotes。每一個 flask application 都應該要有自己的 .conf 文件和 process group name。</span><br><span class="line">    WSGIDaemonProcess botnotes processes&#x3D;1 threads&#x3D;10 display-name&#x3D;%&#123;GROUP&#125; home&#x3D;&#x2F;home</span><br><span class="line">    WSGIProcessGroup botnotes</span><br><span class="line"></span><br><span class="line">    # app.py 和 flaskapp.wsgi 放在 &#x2F;home 目錄下</span><br><span class="line">    # apache 會執行 flaskapp.wsgi, 而 flaskapp.wsgi 包含了 app.py</span><br><span class="line">    WSGIScriptAlias &#x2F; &#x2F;home&#x2F;flaskapp.wsgi</span><br><span class="line">    WSGIScriptReloading Off</span><br><span class="line">    WSGIApplicationGroup %&#123;GLOBAL&#125;</span><br><span class="line"></span><br><span class="line">    # 修改目錄存取權取</span><br><span class="line">    &lt;directory &#x2F;home&#x2F;&gt;</span><br><span class="line">        Options FollowSymLinks</span><br><span class="line">        AllowOverride None</span><br><span class="line">        Order deny,allow</span><br><span class="line">        Require all granted</span><br><span class="line">    &lt;&#x2F;directory&gt;</span><br><span class="line"></span><br><span class="line">    # 可以在 &#x2F;var&#x2F;log&#x2F;apache2&#x2F;error.log 查看 app.py 的輸出</span><br><span class="line">    ErrorLog $&#123;APACHE_LOG_DIR&#125;&#x2F;error.log</span><br><span class="line">    LogLevel warn</span><br><span class="line">    CustomLog $&#123;APACHE_LOG_DIR&#125;&#x2F;access.log combined</span><br><span class="line">&lt;&#x2F;virtualhost&gt;</span><br></pre></td></tr></table></figure>
+
+<p>Enable 模組和設定，然後重啟。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo a2enmod wsgi</span><br><span class="line">sudo a2ensite botnotes</span><br><span class="line">sudo service apache2 restart</span><br></pre></td></tr></table></figure>
+
+<p>最後訪問 Server IP 就會看見 hello world 訊息。完。</p>
+]]></content>
+      <categories>
+        <category>教學</category>
+      </categories>
+      <tags>
+        <tag>Apache2</tag>
+        <tag>Flask</tag>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Google Excel 修改儲存格後自動更新日期</title>
+    <url>/2021/09/12/excel-auto-update-date/</url>
+    <content><![CDATA[<p>使用 Apps Script 對 Google 試算表進行自動化操作。修改儲存格後自動更新對應列的日期。</p>
+<a id="more"></a>
+
+<h3 id="STEP-1-打開-Editor"><a href="#STEP-1-打開-Editor" class="headerlink" title="STEP 1:打開 Editor"></a>STEP 1:打開 Editor</h3><p><img src="/2021/09/12/excel-auto-update-date/how_to_open.png" alt="How to open editor"></p>
+<h3 id="STEP-2-貼上代碼"><a href="#STEP-2-貼上代碼" class="headerlink" title="STEP 2:貼上代碼"></a>STEP 2:貼上代碼</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">function onEdit() &#123;</span><br><span class="line">  var s &#x3D; SpreadsheetApp.getActive().getSheetByName(&#39;xxx&#39;);</span><br><span class="line">  var r &#x3D; s.getActiveCell();</span><br><span class="line">  var row &#x3D; r.getRow();</span><br><span class="line">  var time &#x3D; Utilities.formatDate(new Date(), &quot;GMT+8&quot;, &quot;dd&#x2F;MM&#x2F;yyyy&quot;);</span><br><span class="line">  if( r.getColumn() !&#x3D; 1 &amp;&amp; r.getRow() !&#x3D; 1) &#123;</span><br><span class="line">    s.getRange(&#39;a&#39; + row.toString()).setValue(time);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>行數</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2</td>
+<td>指定特定的工作表，需要把 xxx 改成你工作表的名字。若想功能作用於所有工作表，可改成 var s = SpreadsheetApp.getActiveSheet();</td>
+</tr>
+<tr>
+<td>3</td>
+<td>取得改動後的儲存格。</td>
+</tr>
+<tr>
+<td>4</td>
+<td>取得儲存格的行數。</td>
+</tr>
+<tr>
+<td>5</td>
+<td>取得當前日期時間和指定日期格式。參數可自行修改。</td>
+</tr>
+<tr>
+<td>6</td>
+<td>當儲存格不為a欄和第1行 (第1行通常為標題，a欄是要顯示日期的地方，可以忽略掉)。參數可自行修改。</td>
+</tr>
+<tr>
+<td>7</td>
+<td>修改a欄的對應列為當前日期。參數可自行修改。</td>
+</tr>
+</tbody></table>
+<p>修改後儲存，返回Sheet，完成。 應該可以看到每修改一個儲存格後，對應行數的a欄會自動顯示當前日期。</p>
+]]></content>
+      <categories>
+        <category>教學</category>
+      </categories>
+      <tags>
+        <tag>Excel</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用 Python 編寫基於模糊邏輯的AI股票預測系統</title>
+    <url>/2021/02/15/fuzzy-stock/</url>
+    <content><![CDATA[<p>股票交易的決策十分複雜。專業的交易員會使用許多<strong>技術指標 (Technical Indicator)</strong> 來研究市場趨勢和分析股票，並根據經驗和觀察做出買​​賣決策。為了使電腦也能學會分析技術指標做決策，本文將使用<strong>模糊邏輯 (Fuzzy Logic)</strong> 來模擬一個 AI 交易員。</p>
+<a id="more"></a>
+
+<p>本文會用 <strong>Python3</strong> 編寫一個簡單的股票預測系統，用作決策參考，讓用家決定是否<strong>買入 (Buy)</strong> ，<strong>賣出 (Sell)</strong> ，或繼續<strong>持有股票 (Hold)</strong> 。通過模糊邏輯，系統可以輕鬆地結合多個技術指標並且根據事先定下的<strong>規則 (Rule)</strong> 作出決策。</p>
+<p>下面先簡單介紹下幾個專用詞。</p>
+<hr>
+<h3 id="什麼是Fuzzy-Logic"><a href="#什麼是Fuzzy-Logic" class="headerlink" title="什麼是Fuzzy Logic?"></a>什麼是Fuzzy Logic?</h3><p>人們描述事物可以用上相當豐富的詞匯，例如這杯水有點熱、相當熱、十分熱。然而電腦卻不能理解這些含糊不清的形容詞，不知道熱是該如何定義的，相當熱到底是有多熱，所以任何輸入到電腦的資訊都必需經過量化。於是人們便開始使用<strong>標準邏輯</strong> (非黑即白，1或0，是或非)來形容事物以方便電腦理解，例如定義 40°C 以上為熱。那麼問題又來了，電腦把所有 40°C 以上的東西都定義為熱，那 39°C 的東西呢？難道 39°C 就不算熱嗎？因此，模糊邏輯便被用來解決這個問題了。</p>
+<p>模糊邏輯使用了<strong>真實度 (Degree of truth)</strong> 取代標準邏輯中的非 1 即 0，以表示含糊不清的部分。如下圖顯示，我們可以形容一杯 40°C 的水為 0.9 熱、43°C 或以上的為 1 熱、35°C 或以下的為 0 熱。</p>
+<p><img src="/2021/02/15/fuzzy-stock/fuzzy_logic_vs_trad_logic.png" alt="標準邏輯 VS 模糊邏輯" title="標準邏輯 VS 模糊邏輯"></p>
+<p>因此，在模糊邏輯中，「熱」不是單指某個數值，而是一個集合 (由 0 至 1 的所有數值) 。需要注意的是真實度不等於概率，真實度是用來形容事物的<strong>不確定性 (Uncertainty)</strong> 而不是<strong>可能性 (Probability)</strong> 。</p>
+<p>自此，模糊邏輯讓電腦也可以理解人類那博大精深的語意陳述。</p>
+<h3 id="什麼是Membership-Function"><a href="#什麼是Membership-Function" class="headerlink" title="什麼是Membership Function?"></a>什麼是Membership Function?</h3><p><strong>歸屬函數 (Membership Function)</strong> 其實就是一個把輸入值映射成真實度的函數。如上圖的就是兩個歸屬函數, 在右邊的函數中，輸入 40 得 0.9，輸入 30得 0。</p>
+<p>常見的歸屬函數有下圖幾種。(<a href="http://daad.wb.tu-harburg.de/?id=505">http://daad.wb.tu-harburg.de/?id=505</a>)<br><img src="/2021/02/15/fuzzy-stock/membership_func.jpg" alt="歸屬函數" title="歸屬函數"></p>
+<h3 id="什麼是Rule"><a href="#什麼是Rule" class="headerlink" title="什麼是Rule?"></a>什麼是Rule?</h3><p>IF/THEN <strong>規則 (Rule)</strong> 用作制定條件語句。若輸入的數值符合條件，相對應的 Rule 便會被觸發，藉此計算出不同的輸出數值。Rule 需要預先定義好，一般而言，越復雜的系統，Rule 就越多。</p>
+<p>以下 Rule 的例子取自<a href="https://en.wikipedia.org/wiki/Fuzzy_logic">Wikipedia</a>:</p>
+<blockquote>
+<p>IF 溫度 IS 非常冷 THEN 停止風扇<br>IF 溫度 IS 冷 THEN 減速風扇<br>IF 溫度 IS 正常 THEN 保持現有水平<br>IF 溫度 IS 熱 THEN 加速風扇</p>
+</blockquote>
+<p>非常冷、冷、正常、熱各自都有相對應的 Membership Function。若輸入溫度在他們的 Membership Function 中映射出的真實度不為0，則該 Rule 會被觸發。可想而知，一個輸入是有機會觸發多條 Rule 的，這完全取決於用戶是如何定義 Membership Function。例如 26°C 為 0.8 正常，0.3 熱，則第 2、3 條 Rule 會同時被觸發。至於後面是如何做<strong>解模糊 (Defuzzification)</strong> 計算輸出值，這裡便不作詳述。日後有機會，我會另外再寫一篇文章介紹的。</p>
+<h3 id="實現"><a href="#實現" class="headerlink" title="實現"></a>實現</h3><p>股票預測系統的思路和編寫是參考自以下文章，是一篇14年的論文。</p>
+<blockquote>
+<p><a href="https://www.researchgate.net/publication/271337881_A_Predictive_Stock_Market_Technical_Analysis_Using_Fuzzy_Logic">Ijegwa, A.D., Rebecca, V.O., Olusegun, F., Isaac, O.O.: A predictive stock market technical analysis using fuzzy logic. Comput. Inf. Sci. 7(3), 1 (2014)</a></p>
+</blockquote>
+<h4 id="STEP-1-安裝相關lib"><a href="#STEP-1-安裝相關lib" class="headerlink" title="STEP 1: 安裝相關lib"></a>STEP 1: 安裝相關lib</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip install scikit-fuzzy numpy alpha_vantage</span><br></pre></td></tr></table></figure>
+
+<p>scikit-fuzzy 是用來製作模糊控制的lib，alpha_vantage 是用作找取股票數據的lib，而 numpy 相信大家也不陌生。</p>
+<p>沒有安裝 python3 的可以先到<a href="https://www.python.org/download/releases/3.0/">官網</a>下載。</p>
+<h4 id="STEP-2-決定需要用到的技術指標"><a href="#STEP-2-決定需要用到的技術指標" class="headerlink" title="STEP 2: 決定需要用到的技術指標"></a>STEP 2: 決定需要用到的技術指標</h4><p>我採納了論文中使用到的4個 Indicator，分別是:</p>
+<ol>
+<li>指數平滑異同移動平均線 Moving Average Convergence Divergence (MACD)</li>
+<li>相對強弱指數 Relative Strength Index (RSI)</li>
+<li>隨機震盪指標 Stochastic Oscillator (SO)</li>
+<li>能量潮指標 On Balance Volume (OBV)。</li>
+</ol>
+<p>各個技術指標的算法和意義在下方連結有詳細解釋 ，這裡便不作說明了。<br><a href="https://www.taindicators.com/">https://www.taindicators.com/</a></p>
+<h4 id="STEP-3-定義-Membership-Function"><a href="#STEP-3-定義-Membership-Function" class="headerlink" title="STEP 3: 定義 Membership Function"></a>STEP 3: 定義 Membership Function</h4><table>
+<thead>
+<tr>
+<th>輸入</th>
+<th>Low</th>
+<th>Medium</th>
+<th>High</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MACD</td>
+<td>0-0-1</td>
+<td>-</td>
+<td>0-1-1</td>
+</tr>
+<tr>
+<td>RSI</td>
+<td>0-0-30</td>
+<td>30-50-70</td>
+<td>70-100-100</td>
+</tr>
+<tr>
+<td>SO</td>
+<td>0-0-20</td>
+<td>20-50-80</td>
+<td>80-100-100</td>
+</tr>
+<tr>
+<td>OBV</td>
+<td>0-0-1</td>
+<td>-</td>
+<td>0-1-1</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>輸出</th>
+<th>Sell</th>
+<th>Hold</th>
+<th>Buy</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>REC</td>
+<td>0-0-10</td>
+<td>10-15-20</td>
+<td>20-30-30</td>
+</tr>
+</tbody></table>
+<p>解讀：<br>以 RSI 為例，這個變量有 3 個值，分別是 Low，Medium，High。每個值都有自己的 Membership Function。當中 Medium 30-50-70 指其輸入範圍是30至70，輸入值越接近 50 ，返回的真實度越高，最高為 1。輸入範圍外的值則得 0。</p>
+<h4 id="STEP-4-定義-Rule-Membership-Function"><a href="#STEP-4-定義-Rule-Membership-Function" class="headerlink" title="STEP 4: 定義 Rule Membership Function"></a>STEP 4: 定義 Rule Membership Function</h4><p>沿用論文所定下的Rule，一共9條。</p>
+<blockquote>
+<ol>
+<li>IF MACD is HIGH and RSI is LOW and SO is LOW and OBV is HIGH THEN BUY</li>
+<li>IF MACD is LOW and RSI is HIGH and SO is HIGH and OBV is LOW THEN BUY</li>
+<li>IF MACD is HIGH and RSI is MED and SO is MED and OBV is HIGH THEN BUY</li>
+<li>IF MACD is LOW and RSI is MED and SO is HIGH and OBV is LOW THEN SELL</li>
+<li>IF RSI is LOW and SO is LOW and OBV is HIGH THEN BUY</li>
+<li>IF RSI is HIGH and SO is HIGH and OBV is LOW THEN SELL</li>
+<li>IF MACD is LOW and RSI is HIGH and SO is HIGH THEN SELL</li>
+<li>IF MACD is LOW and RSI is MED and SO is MED THEN HOLD</li>
+<li>IF MACD is HIGH and RSI is MED and SO is MED and OBV is LOW THEN HOLD</li>
+</ol>
+</blockquote>
+<h4 id="STEP-5-編程"><a href="#STEP-5-編程" class="headerlink" title="STEP 5: 編程"></a>STEP 5: 編程</h4><p>請詳見 <a href="https://github.com/cwingho/fuzzy-stock.git">GitHub</a>。<br>我是透過 Alpha Vantage 提供的 API 找取股票數據的。主要原因是其可以提供不同技術指標的查詢服務，節省開發時間。加上使用網友開發的訪問 Alpha Vantage API 的模組，可以更進一步提高開發效率。使用 API 需要 API Key，可以到<a href="https://www.alphavantage.co/support/#api-key">官網</a>申請。因為使用的是免費計劃，所以會有用額限制。平台會紀錄請求的 IP 地址，所有申請多個 API Key 是不會提升用額的。</p>
+<hr>
+<p>到此，基本上編程就完成了。通過下面 command 可以執行程式。 ARKK 可以換成其他美股代碼。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">python3 main.py ARKK</span><br></pre></td></tr></table></figure>
+
+<p>輸出結果:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Recommended to buy ARKK</span><br></pre></td></tr></table></figure>
+<p>目前 AI 會推薦買入契媽的 ETF。</p>
+<p>這預測系統的核心思想就是在觀察到股票超賣時就買入，超買時就賣入，其餘時間則持有股票，從而達到獲利效果。據論文中的討論，模型是可以獲利的，不過文中並沒有詳細列出實驗數據。</p>
+<p>這程式其實還有很多地方有待改善的，例如可以建立 Database 存儲股票數據，減少每次訪問 API 的時間。大家也可以自行修改並加入更多的 Technical Indicator， Rule，股票參數和 Membership Function 以改善模型表現。</p>
+<p>本文只提供了一種可以透過 Fuzzy logic 來預測股市的方法和思路，對任何利用此程式所引致的後果，概不負責。</p>
+]]></content>
+      <categories>
+        <category>技術實戰</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>AI</tag>
+        <tag>Stock</tag>
+        <tag>Fuzzy Logic</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在 GitHub Pages 上使用自定 Domain</title>
+    <url>/2021/02/19/github-page-custom-domain/</url>
+    <content><![CDATA[<p>GitHub Pages 提供自定 Domain 的服務，只要幾步就搞定！</p>
+<a id="more"></a>
+
+<h3 id="事前準備"><a href="#事前準備" class="headerlink" title="事前準備"></a>事前準備</h3><ol>
+<li><p>GitHub Pages<br>網址格式為 <code>xxxx.github.io</code> (xxxx 為 GitHub username)<br>可以參考 GitHub 的 <a href="https://docs.github.com/cn/github/working-with-github-pages/setting-up-a-github-pages-site-with-jekyll">使用 Jekyll 设置 GitHub Pages 站点
+</a> 教學。</p>
+</li>
+<li><p>Domain<br>可以到 <a href="https://www.godaddy.com/">GoDaddy</a>、<a href="https://www.namecheap.com/">Namecheap</a>等域名註冊商購買</p>
+</li>
+</ol>
+<hr>
+<h3 id="STEP1-新增-CNAME-檔案"><a href="#STEP1-新增-CNAME-檔案" class="headerlink" title="STEP1. 新增 CNAME 檔案"></a>STEP1. 新增 CNAME 檔案</h3><p>GitHub 需要在 repository 中新增一個名叫<code>CNAME</code>的檔案(沒有副檔名)以識別自定 的Domain。方法有二：</p>
+<ol>
+<li>自行在repo裡新增並寫入Domain。</li>
+<li>在 GitHub repo 的 Setting 頁面中輸入Domain，<code>CNAME</code>會自行生成在repo裡。</li>
+</ol>
+<img src="example.png" width="80%">
+
+<h3 id="STEP2-設定-DNS"><a href="#STEP2-設定-DNS" class="headerlink" title="STEP2. 設定 DNS"></a>STEP2. 設定 DNS</h3><h4 id="使用-Sub-domain"><a href="#使用-Sub-domain" class="headerlink" title="使用 Sub-domain"></a>使用 Sub-domain</h4><p>若只想使用 Sub-domain（例如 <code>blog.example.com</code>）指向 repo，則只需要創建 <code>CNAME Record</code>，填入想要的前綴和 GitHub Pages 即可。</p>
+<img src="example_cname.png" width="100%">
+
+<h4 id="使用-Apex-domain"><a href="#使用-Apex-domain" class="headerlink" title="使用 Apex-domain"></a>使用 Apex-domain</h4><p>若想使用 Apex-domain（例如 <code>example.com</code>）指向 repo，GitHub 提供了 3 種選擇：</p>
+<h5 id="1-修改-A-Record"><a href="#1-修改-A-Record" class="headerlink" title="1. 修改 A Record"></a>1. 修改 <code>A Record</code></h5><p>則只需要創建 <code>CNAME Record</code>，填入想要的前綴和 GitHub Pages 即可。<br>新增 4 個 <code>A Record</code>:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">185.199.108.153</span><br><span class="line">185.199.109.153</span><br><span class="line">185.199.110.153</span><br><span class="line">185.199.111.153</span><br></pre></td></tr></table></figure>
+<img src="example_a.png" width="100%">
+P.S. IP 有可能會更改，一切以官方提供的為準。
+
+<h5 id="2-修改-ALIAS-Record"><a href="#2-修改-ALIAS-Record" class="headerlink" title="2. 修改 ALIAS Record"></a>2. 修改 <code>ALIAS Record</code></h5><p>與修改 <code>CNAME Record</code> 一樣。<br><img src="example_alias.png" width="100%"></p>
+<h5 id="3-修改-AAAA-Record"><a href="#3-修改-AAAA-Record" class="headerlink" title="3. 修改 AAAA Record"></a>3. 修改 <code>AAAA Record</code></h5><p>與修改 <code>CNAME Record</code> 一樣。<br><img src="example_aaaa.png" width="100%"></p>
+<p>然後，為方便起見，再新增一個 <code>www</code> 的 <code>CNAME Record</code>，這樣無論是輸入<br><code>example.com</code> 或 <code>www.example.com</code>，都可以指向網站。<br><img src="example_www.png" width="100%"></p>
+<p>最後，等上幾分鐘至一天，修改就會生效。</p>
+<hr>
+<h3 id="STEP3-設定-HTTPS"><a href="#STEP3-設定-HTTPS" class="headerlink" title="STEP3. 設定 HTTPS"></a>STEP3. 設定 HTTPS</h3><p>到 GitHub repo 的 Setting 勾選 Enforce HTTPS (在做完 STEP2 後可能需要等上幾分鐘至一天才可以勾選)。</p>
+<p>若看見 URL 開頭為 https，則表示修改成功。</p>
+<hr>
+<h3 id="總結"><a href="#總結" class="headerlink" title="總結"></a>總結</h3><p>GitHub 已經幫助簡化了很多步驟，使修改 Domain 變得簡單。筆者認為每個工程師都應該要有個人網站，不想花錢的可以使用GitHub Pages。</p>
+<hr>
+<h3 id="參考"><a href="#參考" class="headerlink" title="參考"></a>參考</h3><p><a href="https://docs.github.com/cn/github/working-with-github-pages/about-github-pages#types-of-github-pages-sites">GitHub Docs</a></p>
+]]></content>
+      <categories>
+        <category>教學</category>
+      </categories>
+      <tags>
+        <tag>GitHub</tag>
+        <tag>DNS</tag>
+        <tag>Hexo</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>.gitignore 不生效的原因和解決方法</title>
+    <url>/2021/02/22/gitignore-not-work/</url>
+    <content><![CDATA[<p>有時候把想忽略掉的文件寫入 .gitignore 後，發現沒有生效，那些文件依然會被追蹤。教你 3 句 command 解決問題!</p>
+<a id="more"></a>
+
+<h3 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h3><p>.gitignore 只會對<strong>沒有</strong>出現在 repository 裡的文件生效。    對已經 push 過的文件會無效。</p>
+<h3 id="解決方法"><a href="#解決方法" class="headerlink" title="解決方法"></a>解決方法</h3><p>把想忽略的文件從本地 repository 裡刪掉。</p>
+<h3 id="懶人包"><a href="#懶人包" class="headerlink" title="懶人包"></a>懶人包</h3><p>*記得要先 commit change。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git rm -r --cached .</span><br><span class="line">git add .</span><br><span class="line">git commit -m &quot;fixed gitignore bug&quot;</span><br></pre></td></tr></table></figure>
+
+<p>完成！</p>
+]]></content>
+      <categories>
+        <category>筆記</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>只要有心 人人都可以係畫家</title>
+    <url>/2021/02/15/image-style-transfer/</url>
+    <content><![CDATA[<p><strong>Neural Style Transfer (神經風格轉換)</strong> 是 Deep Learning 中 Convolution Neural Network (卷積神經網絡) 的其中一種應用之一。NST 可以透過深度神經網絡算法捕捉到圖像的風格，然後應用到其他圖像上面進行風格轉換。</p>
+<a id="more"></a>
+
+<p>下圖是筆者執行程式後的結果之一。<br><img src="/2021/02/15/image-style-transfer/showcase.png" alt="NST例子" title="NST例子"></p>
+<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Gatys 在 2015 年提出了一種用於風格轉換的神經網絡算法 [1]。這個方法有別於傳統基於統計學的風格轉換，他提供了一個通用的解決方案。人們可以使用同一樣結構的 NST 模型學習出不同圖像風格。於是，NST漸漸變得流行，並引起了科研人們的注意。</p>
+<p>大家都可以在網上中找到很多不同的NST模型，那些模型旨在通過五花八門的方法和 CNN 模型生成出不同的圖片。它們透過不同風格的照片甚至視頻，生成出有趣、出人意料的結果，例如字符風格轉換 [2] 和立體風格轉換 [3]。</p>
+<h3 id="模型"><a href="#模型" class="headerlink" title="模型"></a>模型</h3><h4 id="Code"><a href="#Code" class="headerlink" title="Code"></a>Code</h4><p>代碼是取自 <a href="https://keras.io/examples/generative/neural_style_transfer/">Keras.io</a> NST 的例子 - <a href="https://github.com/keras-team/keras-io/blob/master/examples/generative/neural_style_transfer.py">Github</a></p>
+<h4 id="Network-structure"><a href="#Network-structure" class="headerlink" title="Network structure"></a>Network structure</h4><p>Gatys 表示，可以通過更改圖像的顏色和紋理來轉換圖像風格 [1]。 因此，<strong>NST 的核心就是從內容圖像和風格圖像中提取特徵，找到並最小化它們的特徵與輸出圖像的特徵之間的差距。</strong> 模型的輸入是兩張圖片，分別是內容圖片和風格圖片。模型將要從風格圖片中提取風格並應用到內容圖片上，從而生成一張新的圖片。</p>
+<p>NST 會在開始時隨機生成輸出圖像（無意義的圖像）。然後使用預先訓練好的模型（例如VGG19或VGG16）來提取指定卷積層上所有圖像（內容圖像、風格圖像、輸出圖像）的特徵圖 (Feature map)。 之後，NST 計算三者之間的 Loss。 接下來通過梯度下降 (Gradient Descent) 更新圖像像素 (不是神經網絡本身)。整個模型的結構如下：<br><img src="/2021/02/15/image-style-transfer/nst_structure.png" alt="NST structure" title="NST structure"></p>
+<h4 id="Loss-function"><a href="#Loss-function" class="headerlink" title="Loss function"></a>Loss function</h4><p>相信工程師們對 CNN 和 VGG 都不陌生，網上有很多教學資料，筆者便不在這裡多說了。唯一想要提及的是 NST 中使用到的 <strong>Grim matrix</strong>，它是用來表示風格圖像和輸出圖像的特徵。</p>
+<blockquote>
+<p><a href="https://www.zhihu.com/question/49805962">如何用简单易懂的例子解释格拉姆矩阵/Gram matrix？</a></p>
+</blockquote>
+<p>這裡已經很詳細的解釋了 Grim matrix 的公式和意義。簡單來說，Grim matrix 代表了輸入圖像的每個 Feature map 之間相關性。若兩張圖片的 Grim Matrix 相似，則表示兩張圖片的風格很接近。NST 便是利用這個特性來建立模型的 Loss function。公式如下:<br><img src="/2021/02/15/image-style-transfer/loss_func.png" alt="NST Loss function" title="NST Loss function"></p>
+<p>F 和 P 表示第 l 層中內容圖像和輸出圖像的特徵圖。 G 和 A 表示風格圖像特徵和輸出圖像特徵的 Gram matrix，w 表示當前的權重。N是 Feature map 的數量，而 M 則是 Feature map 的大小。 a 和 b 是 Loss function 的 Weight，由用戶自行設定。 所有 Feature map 皆從 VGG19 的最後一個 CNN 層提取。</p>
+<p>Loss function 主要有兩個部份：</p>
+<ol>
+<li><p>Style loss：用以保持輸出圖像的風格與風格圖像的風格相似。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">style_loss</span>(<span class="params">style, combination</span>):</span></span><br><span class="line">    S = gram_matrix(style)</span><br><span class="line">    C = gram_matrix(combination)</span><br><span class="line">    channels = <span class="number">3</span></span><br><span class="line">    size = img_nrows * img_ncols</span><br><span class="line">    <span class="keyword">return</span> tf.reduce_sum(tf.square(S - C)) / (<span class="number">4.0</span> * (channels ** <span class="number">2</span>) * (size ** <span class="number">2</span>))</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Content loss：用以保持輸出圖像的內容與內容圖像的內容相似。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">content_loss</span>(<span class="params">base, combination</span>):</span></span><br><span class="line">    <span class="keyword">return</span> tf.reduce_sum(tf.square(combination - base))</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<p>大致可以理解成 Style loss 保留風格圖像的紋理；Content loss 保留內容圖像的輪廓/內容，這很好理解吧。</p>
+<h3 id="實驗結果"><a href="#實驗結果" class="headerlink" title="實驗結果"></a>實驗結果</h3><img src="result_1.png" width="90%">
+<img src="result_2.png" width="90%">
+<img src="result_3.png" width="90%">
+<img src="result_4.png" width="50%">
+
+<p>以上是筆者的測試結果。主觀來看，第一組圖效果還是挺好的，生成的圖像有著兩張輸入圖像的影子。至於第二組圖明顯就是出錯了，NST 錯把天上紅色的風格應用到建築物上。而第三組就看得筆者有點眼花了，放大圖像會發現整張圖都佈滿了迷之紋理，也許調整一下 Loss function 中 <code>style_weight</code> 和 <code>content_weight</code> 和其他參數可以改善效果。這就有待讀者們自行實驗了。</p>
+<h3 id="參考"><a href="#參考" class="headerlink" title="參考"></a>參考</h3><blockquote>
+<p>[1]    L. Gatys, A. Ecker, and M. Bethge, “A neural algorithm of artistic style”, Nature Communications, 2015.<br>[2]    G. Atarsaikhan, B. K. Iwana, A. Narusawa, K. Yanai, and S. Uchida, “Neural font style transfer,” Proceedings of the IAPR International Conference on Document Analysis and Recognition, vol. 5, pp. 51-56, 2017.<br>[3]    D. Chen, L. Yuan, J. Liao, N. Yu, and G. Hua, “Stereoscopic neural style transfer,” Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, 2018.</p>
+</blockquote>
+]]></content>
+      <categories>
+        <category>技術實戰</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Deep Learning</tag>
+        <tag>CNN</tag>
+        <tag>Style transfer</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>在 Linux 上安裝 mod_wsgi 時報錯</title>
+    <url>/2021/06/02/install-mod-wsgi-on-linux/</url>
+    <content><![CDATA[<p>在安裝 Apache 和 Python3 時都沒有問題，但到了安裝 mod_wsgi 時就出錯了。</p>
+<a id="more"></a>
+<p>報錯日誌如下:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Collecting mod-wsgi</span><br><span class="line">  Using cached mod_wsgi-4.4.10.tar.gz</span><br><span class="line">    Traceback (most recent call last):</span><br><span class="line">      File &quot;&lt;string&gt;&quot;, line 20, in &lt;module&gt;</span><br><span class="line">      File &quot;&#x2F;tmp&#x2F;pip-build-Dmw1DB&#x2F;mod-wsgi&#x2F;setup.py&quot;, line 140, in &lt;module&gt;</span><br><span class="line">        &#39;missing Apache httpd server packages.&#39; % APXS)</span><br><span class="line">    RuntimeError: The &#39;apxs&#39; command appears not to be installed or is not executable. Please check the list of prerequisites in the documentation for this package and install any missing Apache httpd server packages.</span><br><span class="line">    Complete output from command python setup.py egg_info:</span><br><span class="line">    Traceback (most recent call last):</span><br><span class="line"></span><br><span class="line">      File &quot;&lt;string&gt;&quot;, line 20, in &lt;module&gt;</span><br><span class="line"></span><br><span class="line">      File &quot;&#x2F;tmp&#x2F;pip-build-Dmw1DB&#x2F;mod-wsgi&#x2F;setup.py&quot;, line 140, in &lt;module&gt;</span><br><span class="line"></span><br><span class="line">        &#39;missing Apache httpd server packages.&#39; % APXS)</span><br><span class="line"></span><br><span class="line">    RuntimeError: The &#39;apxs&#39; command appears not to be installed or is not executable. Please check the list of prerequisites in the documentation for this package and install any missing Apache httpd server packages.</span><br><span class="line"></span><br><span class="line">    ----------------------------------------</span><br><span class="line">    Command &quot;python setup.py egg_info&quot; failed with error code 1 in &#x2F;tmp&#x2F;pip-build-Dmw1DB&#x2F;mod-wsgi</span><br></pre></td></tr></table></figure>
+
+<h3 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h3><p>缺失 Apache 的開發包，導致安裝失敗。</p>
+<h3 id="解決方法"><a href="#解決方法" class="headerlink" title="解決方法"></a>解決方法</h3><p>先安裝 Apache 開發包，再安裝 mod_wsgi。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># 在 Ubuntu 或 Debian 下：</span><br><span class="line">sudo apt-get install apache2-dev</span><br><span class="line"></span><br><span class="line"># 在 CentOS 或 RedHat 下：</span><br><span class="line">sudo yum install httpd-devel</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>筆記</category>
+      </categories>
+      <tags>
+        <tag>Apache2</tag>
+        <tag>mod_wsgi</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>[LeetCode] Gas Station</title>
+    <url>/2022/01/21/leetcode-gas-station/</url>
+    <content><![CDATA[<p>今天在 LeetCode 上做的，分享一下思路</p>
+<a id="more"></a>
+
+<p>題目:<br>There are <code>n</code> gas stations along a circular route, where the amount of gas at the <code>i<sup>th</sup></code> station is <code>gas[i]</code>.</p>
+<p>You have a car with an unlimited gas tank and it costs <code>cost[i]</code> of gas to travel from the <code>i<sup>th</sup></code> station to its next <code>(i + 1)<sup>th</sup></code> station. You begin the journey with an empty tank at one of the gas stations.</p>
+<p>Given two integer arrays <code>gas</code> and <code>cost</code>, return the starting gas station’s index if you can travel around the circuit once in the clockwise direction, otherwise return <code>-1</code>. If there exists a solution, it is <strong>guaranteed</strong> to be <strong>unique</strong>.</p>
+<p>Example 1:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input: gas &#x3D; [1,2,3,4,5], cost &#x3D; [3,4,5,1,2]</span><br><span class="line">Output: 3</span><br><span class="line">Explanation:</span><br><span class="line">Start at station 3 (index 3) and fill up with 4 unit of gas. Your tank &#x3D; 0 + 4 &#x3D; 4</span><br><span class="line">Travel to station 4. Your tank &#x3D; 4 - 1 + 5 &#x3D; 8</span><br><span class="line">Travel to station 0. Your tank &#x3D; 8 - 2 + 1 &#x3D; 7</span><br><span class="line">Travel to station 1. Your tank &#x3D; 7 - 3 + 2 &#x3D; 6</span><br><span class="line">Travel to station 2. Your tank &#x3D; 6 - 4 + 3 &#x3D; 5</span><br><span class="line">Travel to station 3. The cost is 5. Your gas is just enough to travel back to station 3.</span><br><span class="line">Therefore, return 3 as the starting index.</span><br></pre></td></tr></table></figure>
+<p>Example 2:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input: gas &#x3D; [2,3,4], cost &#x3D; [3,4,3]</span><br><span class="line">Output: -1</span><br><span class="line">Explanation:</span><br><span class="line">You can&#39;t start at station 0 or 1, as there is not enough gas to travel to the next station.</span><br><span class="line">Let&#39;s start at station 2 and fill up with 4 unit of gas. Your tank &#x3D; 0 + 4 &#x3D; 4</span><br><span class="line">Travel to station 0. Your tank &#x3D; 4 - 3 + 2 &#x3D; 3</span><br><span class="line">Travel to station 1. Your tank &#x3D; 3 - 3 + 3 &#x3D; 3</span><br><span class="line">You cannot travel back to station 2, as it requires 4 unit of gas but you only have 3.</span><br><span class="line">Therefore, you can&#39;t travel around the circuit once no matter where you start.</span><br></pre></td></tr></table></figure>
+
+<p>Constraints:</p>
+<ol>
+<li>gas.length == n</li>
+<li>cost.length == n</li>
+<li>1 &lt;= n &lt;= 105</li>
+<li>0 &lt;= gas[i], cost[i] &lt;= 104</li>
+</ol>
+<p>答案:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">canCompleteCircuit</span>(<span class="params">self, gas: List[<span class="built_in">int</span>], cost: List[<span class="built_in">int</span>]</span>) -&gt; int:</span></span><br><span class="line"></span><br><span class="line">    	<span class="comment"># 如果充燃料的總量少過消耗的總量，那必然不可能經過所有地點並回到原點</span></span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">sum</span>(gas) &lt; <span class="built_in">sum</span>(cost): </span><br><span class="line">            <span class="keyword">return</span> -<span class="number">1</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 初始化 start, cur_gas</span></span><br><span class="line">        <span class="comment"># start 是車的起點, cur_gas 是當前油箱裡油量</span></span><br><span class="line">        start, cur_gas = <span class="number">0</span>, <span class="number">0</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(gas)):</span><br><span class="line">            <span class="comment"># 充油並消耗油</span></span><br><span class="line">            cur_gas += gas[i] - cost[i]</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 若油量為負，表示在當前起點出發的話是無法經過所有地點並回到原點</span></span><br><span class="line">            <span class="comment"># 若油量不為負，則繼續模擬車前往下一個地點</span></span><br><span class="line">            <span class="keyword">if</span> cur_gas &lt; <span class="number">0</span>:</span><br><span class="line"></span><br><span class="line">            	<span class="comment"># 把起點設為下一個節點，並消空油箱</span></span><br><span class="line">                start, cur_gas = i+<span class="number">1</span>, <span class="number">0</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 這裡可能會有人問如果起始點是地點0, 在地點5就不夠燃料了，</span></span><br><span class="line">        <span class="comment"># 那為什麼是從地點6重測，而不是從地點1重測？</span></span><br><span class="line">        <span class="comment"># 答: 因為沒必要，試想想，</span></span><br><span class="line">        <span class="comment"># 車子每到一個地點，當前油箱裡油量是之前剩餘的加上當前油站充的，</span></span><br><span class="line">        <span class="comment"># 而之前剩餘的油量最少是0或者更多，不可能是負數。</span></span><br><span class="line">        <span class="comment"># 所以若兩者相加也依然不夠消耗到地點6，</span></span><br><span class="line">        <span class="comment"># 那麼地點5之前的起點地點0,1,2,3,4 也必然不可能成功到達地點6，</span></span><br><span class="line">        <span class="comment"># 所以沒有測試的必要。</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 如果從地點1重測，最好的情況也只能到達地點5。</span></span><br><span class="line">        <span class="comment"># 因為從地點1到達地點5時的剩餘油量只會與從地點0到達地點5的一樣或更少，不可能會比之多。</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 因為題目保證如果存在答案的話，答案必會有且是唯一的，</span></span><br><span class="line">        <span class="comment"># 所以遍歷一次所有油站就可以返回最後得到的值。</span></span><br><span class="line">        <span class="comment"># 返回最後得到的起點</span></span><br><span class="line">        <span class="keyword">return</span> start</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>教學</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Leetcode</tag>
+        <tag>Greedy Algorithm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>[LeetCode] Median of Two Sorted Arrays</title>
+    <url>/2022/01/14/leetcode-median-of-two-sorted-arrays/</url>
+    <content><![CDATA[<p>今天在 LeetCode 上做的，分享一下思路</p>
+<a id="more"></a>
+
+<p>題目:<br>Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.</p>
+<p>The overall run time complexity should be O(log (m+n)).</p>
+<p>Example 1:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input: nums1 &#x3D; [1,3], nums2 &#x3D; [2]</span><br><span class="line">Output: 2.00000</span><br><span class="line">Explanation: merged array &#x3D; [1,2,3] and median is 2.</span><br></pre></td></tr></table></figure>
+
+<p>Example 2:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Input: nums1 &#x3D; [1,2], nums2 &#x3D; [3,4]</span><br><span class="line">Output: 2.50000</span><br><span class="line">Explanation: merged array &#x3D; [1,2,3,4] and median is (2 + 3) &#x2F; 2 &#x3D; 2.5.</span><br></pre></td></tr></table></figure>
+
+<p>Constraints:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">nums1.length &#x3D;&#x3D; m</span><br><span class="line">nums2.length &#x3D;&#x3D; n</span><br><span class="line">0 &lt;&#x3D; m &lt;&#x3D; 1000</span><br><span class="line">0 &lt;&#x3D; n &lt;&#x3D; 1000</span><br><span class="line">1 &lt;&#x3D; m + n &lt;&#x3D; 2000</span><br><span class="line">-106 &lt;&#x3D; nums1[i], nums2[i] &lt;&#x3D; 106</span><br></pre></td></tr></table></figure>
+
+<p>答案:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">findMedianSortedArrays</span>(<span class="params">self, nums1: List[<span class="built_in">int</span>], nums2: List[<span class="built_in">int</span>]</span>) -&gt; float:</span></span><br><span class="line">        <span class="comment"># 記錄 nums1, nums2 長度</span></span><br><span class="line">        len_nums1 = <span class="built_in">len</span>(nums1)</span><br><span class="line">        len_nums2 = <span class="built_in">len</span>(nums2)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 找出中位數位置</span></span><br><span class="line">        med = (len_nums1+len_nums2)/<span class="number">2</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 初始化</span></span><br><span class="line">        <span class="comment"># 這裡會用上2個變量是為了當 nums1, nums2 長度為雙數時，記錄最近中位數的2個數字</span></span><br><span class="line">        <span class="comment"># 例如輸入:[1,2,3,4,5,6]</span></span><br><span class="line">        <span class="comment"># 則 head = 3, tail =4, median = (3+4)/2=3.5</span></span><br><span class="line">        head = tail = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 這裡有個小技巧，因為中位數其實就是數組的第50%個數字，所以我們只需要遍歷數組中一半的數據就已經可以得到中位數，沒必要遍歷數組整個數組</span></span><br><span class="line">        <span class="comment"># 這裡的 +0.5 也是一個小技巧</span></span><br><span class="line">        <span class="comment"># 例如:</span></span><br><span class="line">        <span class="comment"># 當數組為單數: [1,2,3,4,5], 則 med = 5/2 = 2.5</span></span><br><span class="line">        <span class="comment"># 我們需要3個迴圈才得知答案是3, 所以 ceil(med+0.5) = ceil(3) = 3</span></span><br><span class="line">        <span class="comment"># 當數組為雙數: [1,2,3,4,5,6], 則 med = 6/2 = 3</span></span><br><span class="line">        <span class="comment"># 我們需要4個迴圈才得知第3和第4個數字是什麼, 所以 ceil(3+0.5) = ceil(3.5) = 4</span></span><br><span class="line">        <span class="comment"># 可以看到 +0.5 可以同時處理到數量為單數和雙數的數組</span></span><br><span class="line">        <span class="keyword">for</span> _ <span class="keyword">in</span> <span class="built_in">range</span>(ceil(med+<span class="number">0.5</span>)):</span><br><span class="line">            <span class="comment"># tail 用於紀錄上一個迴圈的 head 值</span></span><br><span class="line">            tail = head</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 我們的方法是從 nums1, nums2 的尾部開始計數，由最大的值到到最小的值，數到第50%的數字就停。我們可以透過不斷 pop nums1, nums2 來實現這個功能。pop()可以取得數組中最尾的數字，並在數組中移除它。</span></span><br><span class="line">            <span class="comment"># 注意：因為問題已經界定了 nums1, nums2 是順序的，所以我們才可以肯定數組中最尾的數字是最大的</span></span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> <span class="built_in">len</span>(nums1):</span><br><span class="line">                <span class="comment"># 當 nums1 為空時, 當前2個數組中最大的值必為 nums2 最尾的值</span></span><br><span class="line">                head = nums2.pop()</span><br><span class="line"></span><br><span class="line">            <span class="keyword">elif</span> <span class="keyword">not</span> <span class="built_in">len</span>(nums2):</span><br><span class="line">                <span class="comment"># 當 nums2 為空時, 當前2個數組中最大的值必為 nums1 最尾的值</span></span><br><span class="line">                head = nums1.pop()</span><br><span class="line"></span><br><span class="line">            <span class="keyword">elif</span> nums1[-<span class="number">1</span>] &lt; nums2[-<span class="number">1</span>]:</span><br><span class="line">                <span class="comment"># 當 nums2 最尾的值大過 nums1 最尾的值時，我們抽出 nums2 最尾的值</span></span><br><span class="line">                head = nums2.pop()</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="comment"># 否則抽出 nums1 最尾的值</span></span><br><span class="line">                head = nums1.pop()</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 當為單數數組時，返回 head；當為雙數數組時，返回 head 加 tail 的均值</span></span><br><span class="line">        <span class="keyword">return</span> head <span class="keyword">if</span> med % <span class="number">1</span> <span class="keyword">else</span> (head+tail)/<span class="number">2</span></span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>教學</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>LeetCode</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>OpenFlow 介紹</title>
+    <url>/2021/02/21/openflow/</url>
+    <content><![CDATA[<blockquote><p>OpenFlow，一種網路通訊協定，屬於數據鏈路層，能夠控制網路交換器或路由器的轉發平面（forwarding plane），藉此改變網路封包所走的網路路徑。</p>
+<footer><strong>Wikipedia</strong><cite><a href="https://zh.wikipedia.org/wiki/OpenFlow">zh.wikipedia.org/wiki/OpenFlow</a></cite></footer></blockquote>
+
+<a id="more"></a>
+<hr>
+<p>本文內容是整合自文章：</p>
+<blockquote>
+<p>Nick McKeown, Tom Anderson, Hari Balakrishnan, Guru Parulkar, Larry Peterson, Jennifer Rexford, Scott Shenker, and Jonathan Turner. 2008. OpenFlow: enabling innovation in campus networks. SIGCOMM Comput. Commun. Rev. 38, 2 (April 2008), 69–74. DOI:<a href="https://doi.org/10.1145/1355734.1355746">https://doi.org/10.1145/1355734.1355746</a></p>
+</blockquote>
+<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>每當學者們對網絡工程有什麼新想法時，往往需要把新想法應用到現實網絡來測試結果。文中作者認為一般學者所發明的網絡新技術已經很難對現實世界產生大影響，因為研究人員很難在現實世界的網絡中測試他們的發明和實驗他們的新想法，結果形成了對現有網絡基建進步的障礙。</p>
+<p>作者覺得網絡的基礎設施已經僵硬化，很難在現實世界中嘗試使用新的 protocol。此外，由於預算有限，學者們也無法輕易地將為實驗特別訂制定制的設備(如router等)投放到現實網絡中做實驗。一般設備的供應商也因商業機密的考慮而無法提供API供研究人員們設定實驗用的參數。</p>
+<p>最終的結果就是，大多數論文中提出想法或新技術都沒有經過充分實驗，顯得沒有那麼權威，缺了點說服力。</p>
+<h3 id="現有解決方案和局限性"><a href="#現有解決方案和局限性" class="headerlink" title="現有解決方案和局限性"></a>現有解決方案和局限性</h3><p>為了解決些述問題，人們提出了一些現有的解決方案。然而，這些方法並不能真正使研究人員滿意，也無法完美地解決問題。坊間是有一些 Open-source 的軟件平台供人們設置自己實驗用的設備和還境。例如使用電腦來模擬switch(不是任天堂的switch……)，但是模擬設備對packet的處理速度比較慢並且port口的數量也不夠。儘管也有一些提供programming interface 的 router 可以高速同時處理多個 packet，但是成本卻過高。</p>
+<h3 id="解決方法"><a href="#解決方法" class="headerlink" title="解決方法"></a>解決方法</h3><p>文章介紹了 Openflow 來解決問題。它是一種開源的 protocol，允許人們以標準/協議好的方式對router或switch進行編程。 </p>
+<p>Openflow的思想是將control plane (控制平面)與設備給分離開來，並允許用戶透過controller來自定義設備的Forward policy。通過Remote control，用戶可以輕鬆地更改router/switch 的Flow table。它為研究人員提供了一個對router或switch進行編程的平台。藉著Openflow，網絡中的一部分資源便可以分配給研究人員來測試他們的發明，因為它可以將實驗的數據流與其他數據流給隔離。</p>
+<blockquote><img src="https://www.researchgate.net/profile/Amitava-Mukherjee-4/publication/313794056/figure/fig5/AS:667625650671623@1536185767264/Key-components-of-OpenFlow-switch.jpg" alt="Key components of OpenFlow switch" width="30%"><footer><strong>Fault Tracking Framework for SDN</strong><cite><a href="https://www.researchgate.net/figure/Key-components-of-OpenFlow-switch_fig5_313794056">www.researchgate.net/figure/Key-components-of-OpenFlow-switch_fig5_313794056</a></cite></footer></blockquote>
+
+<h3 id="評估"><a href="#評估" class="headerlink" title="評估"></a>評估</h3><p>Openflow與傳統的解決方法不同，它不需要更改硬件配置。生產商可以直接將Openflow預安裝到設備中。由於這些設備是可編程的，因此與傳統router/swtich相比，它提供了更多的靈活性和功能。對於研究人員而言，它更具成本效益且更加方便。</p>
+<h3 id="條件"><a href="#條件" class="headerlink" title="條件"></a>條件</h3><p>筆者整個了要把Openflow應用到現實網絡的2個前題。</p>
+<ol>
+<li><p><strong>設備不能頻繁更改。</strong>Openflow 交換器的機制是，當無法決定 packet 的 outgoing port 時，switch會將整個 packet 發送給 controller，讓控制器作決策。如果網絡中的設備不斷更改，交換器在轉發數據包時經常將整個數據包發送到控制器，造成了不必要的流量，則可能形成擠擁，降低整體網絡的性能。</p>
+</li>
+<li><p><strong>實驗產生的流量不會過度影響現實網絡的流量。</strong>由於研究人員可以改變 Openflow switch 的運作，對於某些實驗，交換器有可能會將所有數據包轉發到 controller，或者丟棄所有數據包。在這種情況下，現實網絡的數據包可能會無法到達目的地。因此，要將Openflow應用於現有網絡，必需要保證實驗不會影響現實網絡。</p>
+</li>
+</ol>
+<p>所以，要解決學者們的痛點，選擇解決方法，需要符合下面4個條件。</p>
+<ol>
+<li>設備必須是高性能和低成本的。</li>
+<li>解決方法必須支持不同的研究領域。</li>
+<li>解決方法必須能夠分離實驗用網絡流量和其他網絡流量。</li>
+<li>解決方法必須使生產商滿意，並保護他們的權益。</li>
+</ol>
+<p>而Openflow則可滿足上述的要求。由於生產商可以將Openflow預裝到交換器中，因此它不會產生額外的成本，並且供應商不需要向公眾公開其產品的內部信息。</p>
+<p>但是，在設計解決方案時需要權衡取捨。這是設備性能和功能之間的平衡。由於可以定Forward policy，因此設備不再只是簡單的Store &amp; forward。Openflow 交換器在轉發數據包之前可能需要與控制器溝通。由於數據包處理時間增加，因此可能會導致延遲。</p>
+<p>在成本和性能上還有另一個權衡。由於交換器的數據包處理時間取決於其CPU。如果研究人員想要減少處理時間以提高設備性能，則需要使用更好的CPU，從而導致成本上升。</p>
+<h3 id="限制"><a href="#限制" class="headerlink" title="限制"></a>限制</h3><p>Openflow為交換器提供了靈活性。由於其可以擁有自己複雜的轉發策略，而不僅僅是Store &amp; forward，因此它會有更多的計算量。結果，OpenFlow 交換器可能需要比傳統交換器有更好的硬件配置。儘管不需要任何額外的硬件，但需要更高性能的CPU。這可能會增加專用OpenFlow交換機的成本。</p>
+<p>此外，供應商對Openflow的支持可能還不夠。Openflow是由生產商安裝到交換器中，而軟件升級和補丁只能由供應商提供。如果供應商終止了對交換器型號的支持，用戶很難自行手動升級Openflow。</p>
+<h3 id="潛在問題"><a href="#潛在問題" class="headerlink" title="潛在問題"></a>潛在問題</h3><p>因為用戶可以通過Openflow中的控制器更改交換機的Flow table，這可能會產生一些的安全問題。黑客可以入侵控制器並修改交換器的設定。所以，Openflow必須要有保護控制器免受攻擊的機制和被到更擊時的應對與恢復機制。</p>
+<p>另外，隨著Openflow版本不斷更新，Openflow在需要保證不同版本和不同品牌的交換器之間的兼容性。同時也可考慮在不停機的情況下升級已安裝設備的Openflow版本。</p>
+<h3 id="小總結"><a href="#小總結" class="headerlink" title="小總結"></a>小總結</h3><p>以上是筆者整合文章的內容和一些自己的見解，有興趣的朋友可以自己下載文章看看。</p>
+]]></content>
+      <categories>
+        <category>開卷有益</category>
+      </categories>
+      <tags>
+        <tag>Openflow</tag>
+        <tag>Network</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RAM，硬碟將來會被淘汰？淺談 NVRAM 未來的影響</title>
+    <url>/2021/02/16/nvram/</url>
+    <content><![CDATA[<p>Non-volatile random-access memory (NVRAM)，非易失性隨機訪問存儲器，指斷電後仍能保存數據的記憶體。我認為這是電子產品未來發展的一個大趨勢。那麼 NVRAM 技術的改善究竟會對現有電腦系統帶來什麼機遇和挑戰呢？</p>
+<a id="more"></a>
+
+<p>本文內容是整合自文章：</p>
+<blockquote>
+<p>K. Bailey, L. Ceze, S. D. Gribble and H. M. Levy, “Operating system implications of fast cheap non-volatile memory”, Proc. 13th USENIX Conf. Hot Topics Operating Syst., pp. 2, 2011.</p>
+</blockquote>
+<h3 id="誰要被淘汰？"><a href="#誰要被淘汰？" class="headerlink" title="誰要被淘汰？"></a>誰要被淘汰？</h3><p>首先，NVRAM並不是什麼新技術，我們日常用到的USB, 電腦中的快閃記憶體，也是仰賴了NVRAM 的底層技術。與傳統的硬碟相比，NVRAM有更快的 R/W Speed 但容量較少；與DRAM相比，NVRAM具非易失性但成本較高。若有朝一日，NVRAM發展成熟，具備兩者優點，成為一個成本低，容量大，速度快，具非易失性的RAM，相信到時會為IT界帶來前所未有的改革，人們舊時沿用至今的電腦系統結構很可能要為之而作出改變，傳統的Hard Disk，RAM可能會慢慢被取代。</p>
+<h3 id="有什麼變化？"><a href="#有什麼變化？" class="headerlink" title="有什麼變化？"></a>有什麼變化？</h3><p>文中作者認為過程能分成4個階段：<br><img src="/2021/02/16/nvram/state.png" alt="NVRAM 4個階段" title="NVRAM 4個階段"></p>
+<ol>
+<li>無NVRAM</li>
+<li>NVRAM取代Hard disk</li>
+<li>NVRAM與DRAM結合（部分地址具易失性，部分地址不會）</li>
+<li>NVRAM取代DRAM</li>
+</ol>
+<p>面對硬碟與記憶體兩者結合的代替品，現有OS可能要作出一些改變，例如在記憶體上保護和分享數據的機制、緩存機制、錯誤處理、程式執行機制等，因為數據都是直接永久儲存在記憶體上，所有事情都在同一地方發生。換句話說，CPU可以直接在NVRAM上讀取數據，不需要讓數據從Hard disk上緩存到DRAM然後再讀取，以節省時間，同時OS也不再需要做分頁。</p>
+<p>傳統的應用程式，是需要先安裝生成應用程式後執行的，且執行過程與安裝過程獨立；但對於NVRAM來說，執行過程與安裝過程的邊界卻變得模糊，因為安裝和執行的程式可以在同一個地方發生。程式可以在NVRAM長時間執行，且執行的結果和狀態是可以永久保存下來的。每次重新開機都可以立即從上一個執行狀態恢復過來，不需要重新執行應用程式或讀檔。同理，一但程式出現了錯誤，後果也是很嚴重的，因為錯誤很可能會被永久保存下來。故此，文中作者建議可以透過建立log和checkpoint來表示程式的狀態，或從故障中恢復數據或應用程式。</p>
+<h3 id="風險"><a href="#風險" class="headerlink" title="風險"></a>風險</h3><p>除了上面提及的程式錯誤問題外，用戶私隱可能也會受到影響。在NVRAM上保存著的每一個程式的log和checkout，都有機會增加私隱曝光的可能性。另外，數據便攜性可能也會受到限制，正如階段4顯示，從基於NVRAM的電腦架構中分離出NVRAM對一般用戶來說可能會比較因難，因為當中也包含了一些不能與系統結構分離的數據。</p>
+<h3 id="小總結"><a href="#小總結" class="headerlink" title="小總結"></a>小總結</h3><p>我只挑了文章小部分內容寫出來，還有很多作者的見解並未寫出來。文章在網上便搜得到，有與趣的朋友可以自己下載來看看。</p>
+]]></content>
+      <categories>
+        <category>開卷有益</category>
+      </categories>
+      <tags>
+        <tag>NVRAM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>pyhive presto 報錯 Query exceeded maximum time limit of 300.00s</title>
+    <url>/2021/12/31/pyhive-presto-query-exceeded-maximum-time-limit/</url>
+    <content><![CDATA[<p>在使用 pyhive 連接 presto database 找取巨量數據時報錯</p>
+<a id="more"></a>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">Query exceeded maximum time limit of <span class="number">300.00</span>s</span><br></pre></td></tr></table></figure>
+
+<p>網上教的用 SQL 修改 session variable 也不一定有效，如下面的例子:</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">SET SESSION query_max_execution_time=<span class="string">&#x27;60m&#x27;</span>;</span><br></pre></td></tr></table></figure>
+
+<p>正確解決方法應該是在建立 connection 時傳入 session_props 設定 session variable</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">connection = presto.connect(</span><br><span class="line">      host=<span class="string">&#x27;xxx&#x27;</span>,</span><br><span class="line">      port=xxxx,</span><br><span class="line">      protocol=<span class="string">&#x27;https&#x27;</span>,</span><br><span class="line">      username=<span class="string">&#x27;user&#x27;</span>,</span><br><span class="line">      password=<span class="string">&#x27;password&#x27;</span>,</span><br><span class="line">      catalog=<span class="string">&#x27;hive&#x27;</span>,</span><br><span class="line">      schema=<span class="string">&#x27;default&#x27;</span>,</span><br><span class="line">      session_props=&#123;</span><br><span class="line">      <span class="string">&#x27;query_max_run_time&#x27;</span>:<span class="string">&#x27;120m&#x27;</span>,</span><br><span class="line">      <span class="string">&#x27;query_max_execution_time&#x27;</span>:<span class="string">&#x27;120m&#x27;</span></span><br><span class="line">      &#125;)</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>筆記</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Pyhive</tag>
+        <tag>Presto</tag>
+        <tag>Database</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Python 字串格式化方法</title>
+    <url>/2021/10/25/python-string-formatting/</url>
+    <content><![CDATA[<p>Python 字串格式化方法共四種</p>
+<a id="more"></a>
+
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">text = <span class="string">&#x27;world&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment">#Method 1:</span></span><br><span class="line">print(<span class="string">&#x27;hello %s&#x27;</span>%text)</span><br><span class="line"></span><br><span class="line"><span class="comment">#Method 2:</span></span><br><span class="line">print(<span class="string">&#x27;hello &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(text))</span><br><span class="line"></span><br><span class="line"><span class="comment">#Method 3:</span></span><br><span class="line">print(<span class="string">f&#x27;hello <span class="subst">&#123;text&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">#Method 4:</span></span><br><span class="line"><span class="keyword">from</span> string <span class="keyword">import</span> Template</span><br><span class="line">t = Template(<span class="string">&#x27;hello $text&#x27;</span>)</span><br><span class="line">print(t.substitute(text=text))</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>當中以 Method 3 速度最快，但要求 Python 3.6+</p>
+]]></content>
+      <categories>
+        <category>筆記</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Sigmoid 與 Softmax 激勵函數分別</title>
+    <url>/2021/10/25/sigmoid-softmax-differences/</url>
+    <content><![CDATA[<p>Sigmoid 與 Softmax 兩個 acitivation function 主要有以下2點不同:</p>
+<ol>
+<li>Sigmoid 用於 Binary Classification; Softmax 用於 Multi-Classification</li>
+<li>Sigmoid 不要求所有分類的概率和為1; Softmax 要求所有分類的概率和為1</li>
+</ol>
+]]></content>
+      <categories>
+        <category>筆記</category>
+      </categories>
+      <tags>
+        <tag>Deep Learning</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>spacy 報錯 OSError [E050] Can&#39;t find model &#39;en_core_web_sm&#39;</title>
+    <url>/2021/06/24/spacy-cant-find-model/</url>
+    <content><![CDATA[<p>在安裝 spacy 後調用處理英語的模型 “en” 時報錯。</p>
+<a id="more"></a>
+<p>日誌:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">OSError: [E050] Can&#39;t find model &#39;en_core_web_sm&#39;. It doesn&#39;t seem to be a Python package or a valid path to a data directory.</span><br></pre></td></tr></table></figure>
+
+<h3 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h3><p>沒有安裝英語模型 “en”。安裝 spacy 是不會附加下載語言模型的，模型需要另外下載。</p>
+<h3 id="解決方法"><a href="#解決方法" class="headerlink" title="解決方法"></a>解決方法</h3><p>下載語言模型，以英語模型 “en” 為例，輸入下面指令:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo spacy download en</span><br></pre></td></tr></table></figure>
+<p>或</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo python3 -m spacy download en</span><br></pre></td></tr></table></figure>]]></content>
+      <categories>
+        <category>筆記</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Spacy</tag>
+        <tag>NLP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>systemctl 與 service 的分別</title>
+    <url>/2021/04/01/systemctl-service/</url>
+    <content><![CDATA[<p>我們可以用兩種不同的命令來重啟 Apache server：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo service apache2 restart</span><br><span class="line">sudo systemctl restart apache2</span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+
+<p>究竟 systemctl 與 service 有什麼分別？</p>
+<ol>
+<li><p><code>service</code> 執行的是 <em>/etc/init.d</em> 底下的文件；<code>systemctl</code> 執行的是 <em>/lib/systemd</em> 底下的文件，如在 <em>/lib/systemd</em> 找不到對應參數的文件，則會到 <em>/etc/init.d</em> 底下找。換句話說就是 <code>systemctl</code> 可以兼容到 <code>service</code>。</p>
+</li>
+<li><p><code>service</code> 是 High-level command，可以執行的指令比較基本，例如 start,stop,restart；<code>systemctl</code> 比較接近底層，可以執行更加複雜的指令和處理更多的參數。</p>
+</li>
+</ol>
+<p>基本上 <code>service</code> 可以做的，<code>systemctl</code> 也可以做到，而且可以做得更多。但 <code>service</code> 指令則比較簡潔，而且已經可以滿足到絕大部分用戶的需要。</p>
+]]></content>
+      <categories>
+        <category>筆記</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>簡單實現基於貝葉斯定理的拼寫檢查</title>
+    <url>/2021/02/27/spelling-corrector/</url>
+    <content><![CDATA[<p>使用 Python3 短短 30 行左右的代碼編寫拼寫檢查工具。淺白解說貝葉斯定理(Bayes’ theorem)。</p>
+<a id="more"></a>
+
+<p>參考文章:</p>
+<blockquote>
+<p>Peter Norvig - <a href="https://norvig.com/spell-correct.html">How to Write a Spelling Corrector</a></p>
+</blockquote>
+<p>Peter Norvig 的代碼如下</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> Counter</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">words</span>(<span class="params">text</span>):</span> <span class="keyword">return</span> re.findall(<span class="string">r&#x27;\w+&#x27;</span>, text.lower())</span><br><span class="line"></span><br><span class="line">WORDS = Counter(words(<span class="built_in">open</span>(<span class="string">&#x27;big.txt&#x27;</span>).read()))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">P</span>(<span class="params">word, N=<span class="built_in">sum</span>(<span class="params">WORDS.values(<span class="params"></span>)</span>)</span>):</span> </span><br><span class="line">    <span class="string">&quot;Probability of `word`.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> WORDS[word] / N</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">correction</span>(<span class="params">word</span>):</span> </span><br><span class="line">    <span class="string">&quot;Most probable spelling correction for word.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">max</span>(candidates(word), key=P)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">candidates</span>(<span class="params">word</span>):</span> </span><br><span class="line">    <span class="string">&quot;Generate possible spelling corrections for word.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> (known([word]) <span class="keyword">or</span> known(edits1(word)) <span class="keyword">or</span> known(edits2(word)) <span class="keyword">or</span> [word])</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">known</span>(<span class="params">words</span>):</span> </span><br><span class="line">    <span class="string">&quot;The subset of `words` that appear in the dictionary of WORDS.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">set</span>(w <span class="keyword">for</span> w <span class="keyword">in</span> words <span class="keyword">if</span> w <span class="keyword">in</span> WORDS)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">edits1</span>(<span class="params">word</span>):</span></span><br><span class="line">    <span class="string">&quot;All edits that are one edit away from `word`.&quot;</span></span><br><span class="line">    letters    = <span class="string">&#x27;abcdefghijklmnopqrstuvwxyz&#x27;</span></span><br><span class="line">    splits     = [(word[:i], word[i:])    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(word) + <span class="number">1</span>)]</span><br><span class="line">    deletes    = [L + R[<span class="number">1</span>:]               <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> R]</span><br><span class="line">    transposes = [L + R[<span class="number">1</span>] + R[<span class="number">0</span>] + R[<span class="number">2</span>:] <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> <span class="built_in">len</span>(R)&gt;<span class="number">1</span>]</span><br><span class="line">    replaces   = [L + c + R[<span class="number">1</span>:]           <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> R <span class="keyword">for</span> c <span class="keyword">in</span> letters]</span><br><span class="line">    inserts    = [L + c + R               <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">for</span> c <span class="keyword">in</span> letters]</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">set</span>(deletes + transposes + replaces + inserts)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">edits2</span>(<span class="params">word</span>):</span> </span><br><span class="line">    <span class="string">&quot;All edits that are two edits away from `word`.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> (e2 <span class="keyword">for</span> e1 <span class="keyword">in</span> edits1(word) <span class="keyword">for</span> e2 <span class="keyword">in</span> edits1(e1))</span><br></pre></td></tr></table></figure>
+
+<p>使用方法：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">correction(<span class="string">&#x27;speling&#x27;</span>)</span><br><span class="line"><span class="string">&#x27;spelling&#x27;</span></span><br><span class="line"></span><br><span class="line">correction(<span class="string">&#x27;korrectud&#x27;</span>)</span><br><span class="line"><span class="string">&#x27;corrected&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>以上是 Peter Norvig 寫的版本，先拆解一下原理。</p>
+<hr>
+<h3 id="什麼是貝葉斯定理-Bayes’-theorem"><a href="#什麼是貝葉斯定理-Bayes’-theorem" class="headerlink" title="什麼是貝葉斯定理(Bayes’ theorem)?"></a>什麼是貝葉斯定理(Bayes’ theorem)?</h3><p>我們用 <code>P(A)</code> 來表示事件 A 發生的機率；<code>P(B)</code> 來表示事件 B 發生的機率；<code>P(A)P(B)</code> 來表示事件 A 和事件 B 同時發生的機率。這很容易理解。</p>
+<p>Bayes，一位18世紀英國數學家，他認為雖然A和B同時發生的機率結果永遠都是<code>P(A)P(B)</code>，但計算的過程卻未必一樣。他認為事件發生的先後次序會影響到彼此的機率，即A在B<strong>已發生</strong>的情況下發生的機率，與A在B<strong>未發生</strong>的情況下發生的機率可以是不一樣的，但最終的結果都是<code>P(A)P(B)</code>。</p>
+<p>因此，我們會用 <code>P(A|B)</code> 來表示在B已發生的情況下，A發生的機率；同理，用 <code>P(B|A)</code> 來表示在A已發生的情況下，B發生的機率。我們得出下列兩條公式：</p>
+<blockquote>
+<p>P(B) P(A|B) = P(A) P(B)<br>P(A) P(B|A) = P(A) P(B)</p>
+</blockquote>
+<p>用文字解釋就是</p>
+<blockquote>
+<p>B發生的機率 X 在B已發生的情況下A發生的機率 = A和B同時發生的機率<br>A發生的機率 X 在A已發生的情況下B發生的機率 = A和B同時發生的機率</p>
+</blockquote>
+<p>我們修改一下公式就得出：</p>
+<blockquote>
+<p>P(B) P(A|B) = P(A) P(B) = P(A) P(B|A)<br>P(B) P(A|B) = P(A) P(B|A)<br>P(A|B) = P(A) P(B|A) / P(B)</p>
+</blockquote>
+<p>最後的那條公式也就是 Bayes’ theorem 中最常看見的公式，通常是用作於<br>已得知 <code>P(A)</code>，<code>P(B)</code>，<code>P(B|A)</code>，求 <code>P(A|B)</code>。所以，Bayes’ theorem 就是描述在已知的一些情況下，事件發生的機率。</p>
+<h3 id="如何把-Bayes’-theorem-應用到拼寫檢查"><a href="#如何把-Bayes’-theorem-應用到拼寫檢查" class="headerlink" title="如何把 Bayes’ theorem 應用到拼寫檢查?"></a>如何把 Bayes’ theorem 應用到拼寫檢查?</h3><p>為方便閱讀，我們沿用 Peter Norvig 文中的符號，把 A 改成 c，B 改成 w。<br>所以，我們需要在已知<code>P(c)</code>，<code>P(w)</code>，<code>P(w|c)</code>的情況下，求<code>P(c|w)</code>。 這裡總共有4個部分。然後，我們可以用 <code>c</code> 表示用戶心中想輸入的字(也就是正確的字)，<code>w</code> 表示用戶實際輸入的字(也就是可能會打錯的字)，那麼，這4個部份的代表的就是：</p>
+<blockquote>
+<p>P(c) = 輸入的字出現的機率<br>P(w) = 實際輸入的字出現的機率<br>P(w|c) = 用戶想輸入出 c 卻意外輸入成 w 的機率<br>P(c|w) = 用戶實際輸入 w 但其實想要輸入 c 的機率</p>
+</blockquote>
+<p>而 <code>P(c|w)</code> 就是我們拼寫檢查的核心，也是想要計算出的東西。根據用戶實際輸入的字(<code>w</code>)，猜出他其實是想要輸入什麼字(<code>c</code>)。當然，這是要有個前題的，用戶輸入的字必須是有錯的且心中想輸入的字必須是正確的，不然就不用拼寫檢查了。(廢話)</p>
+<p>再來說說如何用數字來表達這4個東西。</p>
+<ul>
+<li><p>我們可以用 <code>c</code> 在英文文本中出現的頻率來表示 <code>P(c)</code>。例如取一篇10000字英文文章，當中 “apple” 這個字出現了 20 次，則 <code>P("apple")</code> = 20/1000 = 0.002。可想而知，一些經常使用的字例如 “the”，”is” 的 <code>P(c)</code> 會特別高。</p>
+</li>
+<li><p>在不知道 <code>c</code> 的情況下，用戶打出任何 <code>w</code> 都是有可能的(沒有人知道用戶要出什麼字), 所以就 <code>P(w)</code> 而言，我們可以假設 <code>P("apple")</code> = <code>P("banana")</code> = <code>P("cat")</code> = …… = <code>P("abcxyz")</code>，用戶打出任何字串的機率都是一樣的。因為，我們可以簡化公式，可以直接把 <code>P(w)=1</code>，或是刪掉都可以。</p>
+</li>
+<li><p>在已知 <code>c</code> 的情況下，我們可以用編輯距離(edit distance)來表示 <code>P(w|c)</code>。<br>編輯距離就是用來量度一個字串要多少步驟才能變成另一個字符串，當中步驟包括：</p>
+</li>
+</ul>
+<blockquote>
+<ol>
+<li>刪掉一個字符 (appl<strong>r</strong>e -&gt; apple)</li>
+<li>插入一個字符 (appe -&gt; app<strong>l</strong>e)</li>
+<li>取代一個字符 (app<strong>o</strong>e -&gt; apple)</li>
+<li>交換兩個字符 (app<strong>el</strong> -&gt; apple)</li>
+</ol>
+</blockquote>
+<p>簡單來說就是 <code>w</code> 的樣子長得越像 <code>c</code>，則 <code>P(w|c)</code> 越高。例如 <code>P("apppe"|"apple")</code> 就要比 <code>P("snjfkndf"|"apple")</code> 高。</p>
+<ul>
+<li><p>為了求 <code>P(c|w)</code>，我們對所有有可能的 <code>c</code> 計算其 <code>P(w|c) P(c)</code>，然後返回機率最高的 <code>c</code>，這就是我們的答案了。 </p>
+</li>
+<li><p>Peter Norvig 把公式寫成：<br>argmax<sub>c ∈ candidates</sub> P(c)P(w|c)<br>意思說是對所有有可能的 <code>c</code> 計算其 <code>P(w|c)P(c)</code>，然後返回機率最高的 <code>c</code>，這就是我們的答案了。argmax 指取機率最大的那個 candidates(<code>c</code>)。</p>
+</li>
+</ul>
+<h3 id="實現"><a href="#實現" class="headerlink" title="實現"></a>實現</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">edits1</span>(<span class="params">word</span>):</span></span><br><span class="line">    <span class="string">&quot;All edits that are one edit away from `word`.&quot;</span></span><br><span class="line">    letters    = <span class="string">&#x27;abcdefghijklmnopqrstuvwxyz&#x27;</span></span><br><span class="line">    splits     = [(word[:i], word[i:])    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(word) + <span class="number">1</span>)]</span><br><span class="line">    deletes    = [L + R[<span class="number">1</span>:]               <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> R]</span><br><span class="line">    transposes = [L + R[<span class="number">1</span>] + R[<span class="number">0</span>] + R[<span class="number">2</span>:] <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> <span class="built_in">len</span>(R)&gt;<span class="number">1</span>]</span><br><span class="line">    replaces   = [L + c + R[<span class="number">1</span>:]           <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> R <span class="keyword">for</span> c <span class="keyword">in</span> letters]</span><br><span class="line">    inserts    = [L + c + R               <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">for</span> c <span class="keyword">in</span> letters]</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">set</span>(deletes + transposes + replaces + inserts)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">edits2</span>(<span class="params">word</span>):</span> </span><br><span class="line">    <span class="string">&quot;All edits that are two edits away from `word`.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> (e2 <span class="keyword">for</span> e1 <span class="keyword">in</span> edits1(word) <span class="keyword">for</span> e2 <span class="keyword">in</span> edits1(e1))</span><br></pre></td></tr></table></figure>
+
+<p>作者這裡只考慮編輯距離為 2 的候選 <code>c</code>。在<code>edits1</code>中，程式對用戶輸入的 <code>w</code> 進行我們提到過的4種編輯步驟，修改後的字串候是候選<code>c</code>，這些候選<code>c</code>的編輯距離為1。<code>edits2</code> 對所有修改過的字串再修改一次，得出的候選<code>c</code>便是編輯距離為2。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">known</span>(<span class="params">words</span>):</span> </span><br><span class="line">    <span class="string">&quot;The subset of `words` that appear in the dictionary of WORDS.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">set</span>(w <span class="keyword">for</span> w <span class="keyword">in</span> words <span class="keyword">if</span> w <span class="keyword">in</span> WORDS)</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>known(edits1(<span class="string">&#x27;somthing&#x27;</span>))</span><br><span class="line">&#123;<span class="string">&#x27;something&#x27;</span>, <span class="string">&#x27;soothing&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">len</span>(<span class="built_in">set</span>(edits2(<span class="string">&#x27;something&#x27;</span>))</span><br><span class="line"><span class="number">90902</span></span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>known(edits2(<span class="string">&#x27;something&#x27;</span>))</span><br><span class="line">&#123;<span class="string">&#x27;seething&#x27;</span>, <span class="string">&#x27;smoothing&#x27;</span>, <span class="string">&#x27;something&#x27;</span>, <span class="string">&#x27;soothing&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>known(edits2(<span class="string">&#x27;somthing&#x27;</span>))</span><br><span class="line">&#123;<span class="string">&#x27;loathing&#x27;</span>, <span class="string">&#x27;nothing&#x27;</span>, <span class="string">&#x27;scathing&#x27;</span>, <span class="string">&#x27;seething&#x27;</span>, <span class="string">&#x27;smoothing&#x27;</span>, <span class="string">&#x27;something&#x27;</span>, <span class="string">&#x27;soothing&#x27;</span>, <span class="string">&#x27;sorting&#x27;</span>&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>然後把這些候選<code>c</code>都過濾一次，只留下出現在詞彙表的<code>c</code>，過濾掉沒有意義的字串。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">words</span>(<span class="params">text</span>):</span> <span class="keyword">return</span> re.findall(<span class="string">r&#x27;\w+&#x27;</span>, text.lower())</span><br><span class="line"></span><br><span class="line">WORDS = Counter(words(<span class="built_in">open</span>(<span class="string">&#x27;big.txt&#x27;</span>).read()))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">P</span>(<span class="params">word, N=<span class="built_in">sum</span>(<span class="params">WORDS.values(<span class="params"></span>)</span>)</span>):</span> <span class="keyword">return</span> WORDS[word] / N</span><br></pre></td></tr></table></figure>
+
+<p>作者這裡使用到 <a href="https://norvig.com/big.txt">big.txt</a> 來計算每個 <code>c</code> 的 <code>P(c)</code>。大家也可以使用其他英文文本。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">correction</span>(<span class="params">word</span>):</span> <span class="keyword">return</span> <span class="built_in">max</span>(candidates(word), key=P)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">candidates</span>(<span class="params">word</span>):</span> </span><br><span class="line">    <span class="keyword">return</span> known([word]) <span class="keyword">or</span> known(edits1(word)) <span class="keyword">or</span> known(edits2(word)) <span class="keyword">or</span> [word]</span><br></pre></td></tr></table></figure>
+<p>當用戶輸入 <code>w</code> 時，程式會先檢查 <code>w</code> 有沒有打錯(有沒有出現在詞彙表中)，沒有錯則直接返回 <code>w</code>；有則優先返回編輯距離為1的候選<code>c</code>，然後是編輯距離為2的候選<code>c</code>；若沒有編輯距離為2以內的候選<code>c</code>，則返回 <code>w</code> 表示愛莫能助。</p>
+<h3 id="測試"><a href="#測試" class="headerlink" title="測試"></a>測試</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">unit_tests</span>():</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;speling&#x27;</span>) == <span class="string">&#x27;spelling&#x27;</span>              <span class="comment"># insert</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;korrectud&#x27;</span>) == <span class="string">&#x27;corrected&#x27;</span>           <span class="comment"># replace 2</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;bycycle&#x27;</span>) == <span class="string">&#x27;bicycle&#x27;</span>               <span class="comment"># replace</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;inconvient&#x27;</span>) == <span class="string">&#x27;inconvenient&#x27;</span>       <span class="comment"># insert 2</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;arrainged&#x27;</span>) == <span class="string">&#x27;arranged&#x27;</span>            <span class="comment"># delete</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;peotry&#x27;</span>) ==<span class="string">&#x27;poetry&#x27;</span>                  <span class="comment"># transpose</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;peotryy&#x27;</span>) ==<span class="string">&#x27;poetry&#x27;</span>                 <span class="comment"># transpose + delete</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;word&#x27;</span>) == <span class="string">&#x27;word&#x27;</span>                     <span class="comment"># known</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;quintessential&#x27;</span>) == <span class="string">&#x27;quintessential&#x27;</span> <span class="comment"># unknown</span></span><br><span class="line">    <span class="keyword">assert</span> words(<span class="string">&#x27;This is a TEST.&#x27;</span>) == [<span class="string">&#x27;this&#x27;</span>, <span class="string">&#x27;is&#x27;</span>, <span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;test&#x27;</span>]</span><br><span class="line">    <span class="keyword">assert</span> Counter(words(<span class="string">&#x27;This is a test. 123; A TEST this is.&#x27;</span>)) == (</span><br><span class="line">           Counter(&#123;<span class="string">&#x27;123&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;a&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;is&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;test&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;this&#x27;</span>: <span class="number">2</span>&#125;))</span><br><span class="line">    <span class="keyword">assert</span> <span class="built_in">len</span>(WORDS) == <span class="number">32192</span></span><br><span class="line">    <span class="keyword">assert</span> <span class="built_in">sum</span>(WORDS.values()) == <span class="number">1115504</span></span><br><span class="line">    <span class="keyword">assert</span> WORDS.most_common(<span class="number">10</span>) == [</span><br><span class="line">     (<span class="string">&#x27;the&#x27;</span>, <span class="number">79808</span>),</span><br><span class="line">     (<span class="string">&#x27;of&#x27;</span>, <span class="number">40024</span>),</span><br><span class="line">     (<span class="string">&#x27;and&#x27;</span>, <span class="number">38311</span>),</span><br><span class="line">     (<span class="string">&#x27;to&#x27;</span>, <span class="number">28765</span>),</span><br><span class="line">     (<span class="string">&#x27;in&#x27;</span>, <span class="number">22020</span>),</span><br><span class="line">     (<span class="string">&#x27;a&#x27;</span>, <span class="number">21124</span>),</span><br><span class="line">     (<span class="string">&#x27;that&#x27;</span>, <span class="number">12512</span>),</span><br><span class="line">     (<span class="string">&#x27;he&#x27;</span>, <span class="number">12401</span>),</span><br><span class="line">     (<span class="string">&#x27;was&#x27;</span>, <span class="number">11410</span>),</span><br><span class="line">     (<span class="string">&#x27;it&#x27;</span>, <span class="number">10681</span>)]</span><br><span class="line">    <span class="keyword">assert</span> WORDS[<span class="string">&#x27;the&#x27;</span>] == <span class="number">79808</span></span><br><span class="line">    <span class="keyword">assert</span> P(<span class="string">&#x27;quintessential&#x27;</span>) == <span class="number">0</span></span><br><span class="line">    <span class="keyword">assert</span> <span class="number">0.07</span> &lt; P(<span class="string">&#x27;the&#x27;</span>) &lt; <span class="number">0.08</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;unit_tests pass&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">spelltest</span>(<span class="params">tests, verbose=<span class="literal">False</span></span>):</span></span><br><span class="line">    <span class="string">&quot;Run correction(wrong) on all (right, wrong) pairs; report results.&quot;</span></span><br><span class="line">    <span class="keyword">import</span> time</span><br><span class="line">    start = time.clock()</span><br><span class="line">    good, unknown = <span class="number">0</span>, <span class="number">0</span></span><br><span class="line">    n = <span class="built_in">len</span>(tests)</span><br><span class="line">    <span class="keyword">for</span> right, wrong <span class="keyword">in</span> tests:</span><br><span class="line">        w = correction(wrong)</span><br><span class="line">        good += (w == right)</span><br><span class="line">        <span class="keyword">if</span> w != right:</span><br><span class="line">            unknown += (right <span class="keyword">not</span> <span class="keyword">in</span> WORDS)</span><br><span class="line">            <span class="keyword">if</span> verbose:</span><br><span class="line">                print(<span class="string">&#x27;correction(&#123;&#125;) =&gt; &#123;&#125; (&#123;&#125;); expected &#123;&#125; (&#123;&#125;)&#x27;</span></span><br><span class="line">                      .<span class="built_in">format</span>(wrong, w, WORDS[w], right, WORDS[right]))</span><br><span class="line">    dt = time.clock() - start</span><br><span class="line">    print(<span class="string">&#x27;&#123;:.0%&#125; of &#123;&#125; correct (&#123;:.0%&#125; unknown) at &#123;:.0f&#125; words per second &#x27;</span></span><br><span class="line">          .<span class="built_in">format</span>(good / n, n, unknown / n, n / dt))</span><br><span class="line">    </span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">Testset</span>(<span class="params">lines</span>):</span></span><br><span class="line">    <span class="string">&quot;Parse &#x27;right: wrong1 wrong2&#x27; lines into [(&#x27;right&#x27;, &#x27;wrong1&#x27;), (&#x27;right&#x27;, &#x27;wrong2&#x27;)] pairs.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> [(right, wrong)</span><br><span class="line">            <span class="keyword">for</span> (right, wrongs) <span class="keyword">in</span> (line.split(<span class="string">&#x27;:&#x27;</span>) <span class="keyword">for</span> line <span class="keyword">in</span> lines)</span><br><span class="line">            <span class="keyword">for</span> wrong <span class="keyword">in</span> wrongs.split()]</span><br><span class="line"></span><br><span class="line">print(unit_tests())</span><br><span class="line">spelltest(Testset(<span class="built_in">open</span>(<span class="string">&#x27;spell-testset1.txt&#x27;</span>))) <span class="comment"># Development set</span></span><br><span class="line">spelltest(Testset(<span class="built_in">open</span>(<span class="string">&#x27;spell-testset2.txt&#x27;</span>))) <span class="comment"># Final test set</span></span><br></pre></td></tr></table></figure>
+
+<p>輸出：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">unit_tests <span class="keyword">pass</span></span><br><span class="line"><span class="number">75</span>% of <span class="number">270</span> correct at <span class="number">41</span> words per second</span><br><span class="line"><span class="number">68</span>% of <span class="number">400</span> correct at <span class="number">35</span> words per second</span><br><span class="line"><span class="literal">None</span></span><br></pre></td></tr></table></figure>
+
+<p>作者使用了兩個 test set (<a href="https://norvig.com/spell-testset1.txt">spell-testset1.txt</a> <a href="https://norvig.com/spell-testset1.txt">spell-testset2.txt</a>) 來做測試 ，準確率有 70% 左右。還算不錯吧，不竟你也不能要求一個簡單的模型能有多好的結果。測試結果錯誤的原因主要是錯字編輯距離超過2、<code>c</code> 不在詞彙表當中、<code>c</code>為編輯距離2但返回了編輯距離1的候選<code>c</code>等等。</p>
+<p>Peter Norvig認為若想要更好的效果，還需要考慮到 <code>w</code> 的上下文，根據句子的語意，返回適合當前語意且<code>P(c)</code>比較大的<code>c</code>。另外，在計算 <code>P(w|c)</code> 時，除了編輯距離，還可以考慮鍵盤按鍵分佈使輸入錯誤的機率、錯用母音字母、重複輸入等比較常見的錯誤，或許可以更進一步的改善模型。</p>
+]]></content>
+      <categories>
+        <category>技術實戰</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>Bayes</tag>
+        <tag>Spelling corrector</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>PHP 迷思</title>
+    <url>/2021/02/17/think-of-php/</url>
+    <content><![CDATA[<p>PHP 是我的入門語言，也是最鐘愛的語言之一。當初花了整整一個暑假，學會了 HTML+JS+CSS+PHP 入門，還寫了一個簡化版的百度貼吧做練習。要知道事前我還是個分不清 Frontend 和 Backend 的弱雞呢。</p>
+<a id="more"></a>
+<p>後來和同學相處時間久了，總能察覺到他們對 PHP 的鄙視，於是便自己上網 google。 最後發現網上鄙視 PHP 的產業鏈原來要比想像中龐大得多，當中規模大者當以 Facebook 各個 Programmer meme 社群為首。</p>
+<h2 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h2><p>簡而言之，討厭 PHP 的工程師提出的原因主要有幾點：</p>
+<h3 id="1-設計混亂，缺乏一致性"><a href="#1-設計混亂，缺乏一致性" class="headerlink" title="1. 設計混亂，缺乏一致性"></a>1. 設計混亂，缺乏一致性</h3><p>我們先來先先下面的例子：</p>
+<ul>
+<li><p>Python</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">a = <span class="string">&#x27;hello world&#x27;</span></span><br><span class="line">b = a.split(<span class="string">&#x27; &#x27;</span>)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Java</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">String a = <span class="string">&quot;hello world&quot;</span>;</span><br><span class="line">String[] b = a.split(<span class="string">&quot; &quot;</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Javascript</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line"><span class="keyword">var</span> a = <span class="string">&#x27;hello world&#x27;</span>;</span><br><span class="line"><span class="keyword">var</span> b = a.split(<span class="string">&#x27; &#x27;</span>);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>ASP</p>
+<figure class="highlight javascript"><table><tr><td class="code"><pre><span class="line">a = <span class="string">&quot;hello world&quot;</span></span><br><span class="line">b = Split(a, <span class="string">&quot; &quot;</span>)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>PHP</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="variable">$a</span> = <span class="string">&#x27;hello world&#x27;</span>;</span><br><span class="line"><span class="variable">$b</span> = explode(<span class="string">&#x27; &#x27;</span>, <span class="variable">$a</span>);</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<img src="question_mark.jpg" width="40%">
+
+<p>PHP 部份函數命名確實與其他語言不一樣。</p>
+<p>再看看下面 PHP 的一些 Function：</p>
+<figure class="highlight php"><table><tr><td class="code"><pre><span class="line"><span class="comment">// underscore?</span></span><br><span class="line">str_replace ( <span class="keyword">array</span>|<span class="keyword">string</span> <span class="variable">$search</span> , <span class="keyword">array</span>|<span class="keyword">string</span> <span class="variable">$replace</span> , <span class="keyword">string</span>|<span class="keyword">array</span> <span class="variable">$subject</span> , <span class="keyword">int</span> &amp;<span class="variable">$count</span> = <span class="literal">null</span> ) : <span class="keyword">string</span>|<span class="keyword">array</span></span><br><span class="line">str_repeat ( <span class="keyword">string</span> <span class="variable">$string</span> , <span class="keyword">int</span> <span class="variable">$times</span> ) : <span class="keyword">string</span></span><br><span class="line">strstr ( <span class="keyword">string</span> <span class="variable">$haystack</span> , <span class="keyword">string</span> <span class="variable">$needle</span> , <span class="keyword">bool</span> <span class="variable">$before_needle</span> = <span class="literal">false</span> ) : <span class="keyword">string</span>|<span class="literal">false</span></span><br><span class="line">strcmp ( <span class="keyword">string</span> <span class="variable">$str1</span> , <span class="keyword">string</span> <span class="variable">$str2</span> ) : <span class="keyword">int</span></span><br><span class="line">htmlentities ( <span class="keyword">string</span> <span class="variable">$string</span> , <span class="keyword">int</span> <span class="variable">$flags</span> = ENT_COMPAT , <span class="keyword">string</span>|<span class="literal">null</span> <span class="variable">$encoding</span> = <span class="literal">null</span> , <span class="keyword">bool</span> <span class="variable">$double_encode</span> = <span class="literal">true</span> ) : <span class="keyword">string</span></span><br><span class="line">html_entity_decode ( <span class="keyword">string</span> <span class="variable">$string</span> , <span class="keyword">int</span> <span class="variable">$flags</span> = ENT_COMPAT , <span class="keyword">string</span>|<span class="literal">null</span> <span class="variable">$encoding</span> = <span class="literal">null</span> ) : <span class="keyword">string</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// to? 2?</span></span><br><span class="line">strtotime ( <span class="keyword">string</span> <span class="variable">$datetime</span> , <span class="keyword">int</span>|<span class="literal">null</span> <span class="variable">$baseTimestamp</span> = <span class="literal">null</span> ) : <span class="keyword">int</span>|<span class="literal">false</span></span><br><span class="line">strtoupper ( <span class="keyword">string</span> <span class="variable">$string</span> ) : <span class="keyword">string</span></span><br><span class="line">nl2br ( <span class="keyword">string</span> <span class="variable">$string</span> , <span class="keyword">bool</span> <span class="variable">$use_xhtml</span> = <span class="literal">true</span> ) : <span class="keyword">string</span></span><br><span class="line">rad2deg ( <span class="keyword">float</span> <span class="variable">$num</span> ) : <span class="keyword">float</span></span><br></pre></td></tr></table></figure>
+
+<img src="cannot_guess.jpeg" width="80%">
+
+<p>你永遠都猜不到 PHP 的命令規則。我也十分認同這個敗筆，也多次和同事抱怨過。</p>
+<h3 id="2-對-Multi-threading-支持不夠好"><a href="#2-對-Multi-threading-支持不夠好" class="headerlink" title="2. 對 Multi-threading 支持不夠好"></a>2. 對 Multi-threading 支持不夠好</h3><p>平心而論，以我有限的見識來說，能夠在 PHP 上用到 Multi-threading 的場景實在是少之有少。我在一間小公司實習過一年的 Web programmer, 接到手的項目無數，卻還是沒碰到過需要用上 Multi-threading 的地方。</p>
+<p>在絕大數多數情況下，PHP 都只是在做緩存和存取 Database 的工作，它作為一般網站的 Backend language, 它其實已經可以勝任，而且表現還不錯。</p>
+<p>PHP 的二成功能可以滿足到八成的業務。當你需要在 PHP 用上 Multi-threading 來處理大數據時，你該思考的是自己的設計方案是否正確，如何讓擅長處理大數據的語言實現，而不是責怪 PHP 不能提供更多，每個語言的定位都是不一樣的，沒有一種語言可以適用於所有場景。作為一隻用於開發網站的 Backend language，PHP 不適合處理大數據，不適合長時間執行 Compute-Intensive 的程序，但用來做單純的 Request and response 的 web application, 它卻出奇的做得好。</p>
+<h3 id="3-慢"><a href="#3-慢" class="headerlink" title="3. 慢"></a>3. 慢</h3><p>能夠說出這種話的人大概是很久沒有關注 PHP 了，由 PHP5 到 PHP8，其實效能已經提高了不少。這裡引用一下 Phoronix 對 PHP8 的<a href="https://www.phoronix.com/scan.php?page=article&item=php8-jit-june&num=2">測試報告</a>：</p>
+<blockquote>
+<p>With some of PHP’s own built-in tests, the impact of PHP 8.0 out-of-the-box performance sees a slight improvement over the already fast PHP 7.4 but enabling the JIT support is turning to be quite a performance win.</p>
+</blockquote>
+<p><img src="https://openbenchmarking.org/embed.php?i=2006013-NI-PHP8ENDOF89&sha=cd51abc&p=2" alt="PHP8 Brench" title="PHP8 Brench"></p>
+<h3 id="4-老"><a href="#4-老" class="headerlink" title="4. 老"></a>4. 老</h3><p>這個就有點無理取鬧。評價一個語言從來都不是新或舊，熱門或冷門；只有合適和不合適，正如上面所提及的，這是定位的問題。只要在適當的地方適當地完成任務，那就是一個好語言。</p>
+<p>我對一些公眾號，群組不時大呼「PHP 已死」、「PHP 敗給 XXX 的十大理由」，都是嗤之以鼻的。那些人為了推銷自己的課程，不斷散播著不實訊息，導致新人不敢學，扭曲外行人對編程語言的認知，可謂十惡不赦。 RedMonk 在 2020 年發表的圖表已經說明了一切，PHP 至今依舊堅挺，熬死了無數語言。</p>
+<p><a href="https://redmonk.com/sogrady/2020/07/27/language-rankings-6-20/">The RedMonk Programming Language Rankings: June 2020</a></p>
+<p><img src="https://redmonk.com/sogrady/files/2020/07/lang-rank-q320-wm.png" alt="Programming Language Rankings" title="Programming Language Rankings"></p>
+<h2 id="總結"><a href="#總結" class="headerlink" title="總結"></a>總結</h2><p>其實要我找出 PHP 的缺點，也說不出多少，但若是優點的話，從無知都熟練，這一路走過來，還是深有體會的。 PHP 不僅易學易上手，開發快，社區大，Library 和 Framework也多。雖然現在不是我主要使用的語言，但確實是值得新手一學。</p>
+]]></content>
+      <categories>
+        <category>雜談</category>
+      </categories>
+      <tags>
+        <tag>PHP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用基因算法(GA)解決旅行商問題(TSP)</title>
+    <url>/2021/03/14/tsp-ga/</url>
+    <content><![CDATA[<p>旅行商問題（Traveling Salesman Problem）是個經典的 NP 難題。 它要求給定一系列的城市，旅行商需要找到一條最短或最低成本的路徑，前提是每個城市只能訪問一次，且旅行商最後需要返回到起始城市。</p>
+<p>基因演算法 (Genetic Algorithm) 透過模擬生物進化的過程 (物競天擇 適者生存)，對一群候選的答案不斷進行迭代模擬進化，過程包括自然選擇 (Selection)、雜交 (Crossover)、突變 (Mutation)等，從而進化出更好更強的答案，值到迭代結束或再也無法進代出更好的答案為止。</p>
+<a id="more"></a>
+
+<h3 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h3><p>利用 GA 對 TSP 找出最佳路徑。</p>
+<h3 id="解說"><a href="#解說" class="headerlink" title="解說"></a>解說</h3><h4 id="GA-結構"><a href="#GA-結構" class="headerlink" title="GA 結構"></a>GA 結構</h4><p><img src="/2021/03/14/tsp-ga/example_1.png" alt="Crossover 例子" title="Crossover 例子"><br>我們會稱一群候選的答案為 Population。Population 中包含多個 Chromosome (染色體)，每個染色體都由 Fitness Function 和 Individual 組成，Individual 中的每個元素則稱為 Gene (基因)。</p>
+<p>在初始化時，對於 TSP 而言，每一個 Individual 都是一個有可能的答案，裡面的每個基因都代表著一個城市，染色體各自都包含了一條由起始城市開始，穿越各含城市，最後回到起始城市的路徑，但並不能保證是最佳的案答，因為還沒經過任何進化。</p>
+<p>為方便易明，我們這裡簡化一下，把 Chromosome 和 Individual 都統稱為 Individual，每個 Individual 都代表著一個可能的答案。</p>
+<h4 id="適應度-Fitness"><a href="#適應度-Fitness" class="headerlink" title="適應度 (Fitness)"></a>適應度 (Fitness)</h4><p>我們對每個 Individual 都會為其計算一個適應度，適應度由 Fitness Function 計算，一般範圍在 0-1 之間。適應度越高則代表該 Individual 越強，越能適應環境，越有機會生存下去。而這種強大的 Individuals 所雜交生出來的後代 (一個新的答案)也越有機會也是強大的，反之亦然。當然，也有兩個弱小的 Individuals 雜交生出了強大後代的可能性。</p>
+<p>有時候，我們不會用適應度，而是用成本 (Cost) 來量度 Individual。成本與適應度剛剛相反，成本越低則代示個體越強大。我們可以理解成：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">成本 &#x3D; 1 - 適應度</span><br></pre></td></tr></table></figure>
+<p>是使用 Fitness 還是 Cost 還是兩個一起用，並沒有硬規定，這完全取決於工程師如何設計模型。</p>
+<h4 id="自然選擇-Selection"><a href="#自然選擇-Selection" class="headerlink" title="自然選擇 (Selection)"></a>自然選擇 (Selection)</h4><p>我們需要在 Population 中選擇 Individuals 用來繁衍後代，這裡便會用到適應度，適應度越高則被選出來的機會越大。這很合理，在汰弱留強的環境下，只有高適應度的個體才會生存下來並繁衍後代，弱者沒有人權(笑)。</p>
+<h4 id="雜交-Crossover"><a href="#雜交-Crossover" class="headerlink" title="雜交 (Crossover)"></a>雜交 (Crossover)</h4><p>我們根據個體的 Fitness 抽出一對 Individuals, 並互相交換各自的部分基因。在 TSP 中，這些基因便是路徑中城市，從左至右基因代表的城市，就是旅行商訪問城市的順序。透過互相交換城市，改變訪問城市的次序，從而得到一條新的路徑。下面是例子：</p>
+<p><img src="/2021/03/14/tsp-ga/example_1.png" alt="Crossover 例子" title="Crossover 例子"><br>我們取出一對個體，分別是 Male 和 Female，我們決定保留部分的基因，分別是城市1和3，起始城市0不變，其餘城市進行雜交。最後我們便得到了兩條新的路徑。這兩個新的答案可以當成新的個體(後代)加入到 Population 中；或取代 Population 中一些比較弱的個體；也可以直接在 Male 和 Female 上交換基因，不產生新的個體。每一種做法都可以生成出不錯的結果。工程師可以按自己的喜好或是結果的好壞來設計 Crossover 的流程。</p>
+<h4 id="突變-Mutation"><a href="#突變-Mutation" class="headerlink" title="突變 (Mutation)"></a>突變 (Mutation)</h4><p>單靠 Crossover 是不能保證會得到最佳的答案，而且有機會會使 Population 偏向單一化，也就是族群中的每個個體的基因都十分相似 (可以理解成每個個體的祖先都是某同一個強大的個體，所以大家的基因都很像)，每個的答案都差不多，缺乏基因多樣性 (Genetic Diversity)，最終陷入了 Local Minima。為此，我們每個個體都有機會進行突變，從而產生出無法透過雜交得出的答案。下面是例子：</p>
+<p><img src="/2021/03/14/tsp-ga/example_2.png" alt="Mutation 例子" title="Mutation 例子"><br>每個個體都有機會突變，突變可以是自身隨機 2 個基因的位置對掉。在 TSP 中，突變可以是同一染色體中的多個基因位置對掉，如上圖的例子就是城市2和城市5得順序對掉了。</p>
+<h4 id="精英選擇-Elitist-selection"><a href="#精英選擇-Elitist-selection" class="headerlink" title="精英選擇 (Elitist selection)"></a>精英選擇 (Elitist selection)</h4><p>直接讓部分最好的個體生存到下一世代或取代下一世代最弱的部分個體，可以確保算法得到的答案不會越變越差，下一世代的最好的個體起碼也有上一世代的最好個體這麼強。</p>
+<h3 id="Python-實現"><a href="#Python-實現" class="headerlink" title="Python 實現"></a>Python 實現</h3><figure class="highlight python"><figcaption><span>ga.py</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">GA</span>():</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self,  cities, start_city=<span class="number">0</span>, </span></span></span><br><span class="line"><span class="function"><span class="params">                        population_size=<span class="number">10</span>, </span></span></span><br><span class="line"><span class="function"><span class="params">                        crossover_rate=<span class="number">0.8</span>, </span></span></span><br><span class="line"><span class="function"><span class="params">                        mutation_rate=<span class="number">0.1</span>, </span></span></span><br><span class="line"><span class="function"><span class="params">                        elite_rate=<span class="number">0.1</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">                        seed=<span class="number">0</span></span>):</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 設定 seed 方便重做實驗結果</span></span><br><span class="line">        np.random.seed(seed)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 輸入城市, 一個 2D array, 記錄了每個城市的 x,y 座標</span></span><br><span class="line">        self.cities = np.asarray(cities)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Population 大小, 也就是 Individual 的數量</span></span><br><span class="line">        self.pop_size = population_size</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Individuals 發生雜交的機率</span></span><br><span class="line">        self.co_rate = crossover_rate</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Individuals 發生突變的機率</span></span><br><span class="line">        self.mut_rate = mutation_rate</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 定義保留多少個最強的 Individuals 生存至下一世代</span></span><br><span class="line">        self.elite_rate = elite_rate</span><br><span class="line">        self.n_elite = math.floor(self.pop_size*self.elite_rate)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 設定起始城市</span></span><br><span class="line">        self.start = start_city</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 定義每個 Chromosome 有多少個 Gene, 也就是多少個城市</span></span><br><span class="line">        self.dna_size = <span class="built_in">len</span>(cities)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 預計算每個城市之間的距離, 方便計算 Cost</span></span><br><span class="line">        <span class="comment"># to save computation</span></span><br><span class="line">        self.dist = self.computeDist(self.dna_size)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 初始化候選答案</span></span><br><span class="line">        self.pop = self.initPop(self.pop_size, self.dna_size, self.start)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 計算每個候選答案的成本</span></span><br><span class="line">        <span class="comment"># 我們這裡用了 cost 而不是 fitness 因為我喜歡</span></span><br><span class="line">        self.cost = self.computeCost()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">initPop</span>(<span class="params">self, pop_size, dna_size, start_city</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        初始化 Population</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        pop = np.zeros((pop_size,dna_size), dtype=<span class="built_in">int</span>)</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(pop_size):</span><br><span class="line">            pop[i] = np.arange(dna_size)</span><br><span class="line">            np.random.shuffle(pop[i])</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 確保第一個基因是起始城市</span></span><br><span class="line">            <span class="keyword">if</span> pop[i][<span class="number">0</span>] != start_city:</span><br><span class="line">                pop[i][pop[i] == start_city] = pop[i][<span class="number">0</span>]</span><br><span class="line">                pop[i][<span class="number">0</span>] = start_city</span><br><span class="line">        <span class="keyword">return</span> pop</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">computeDist</span>(<span class="params">self, dna_size</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        使用畢氏定理預計算每個城市之間的距離</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        dist = np.zeros((dna_size, dna_size))</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(dna_size):</span><br><span class="line">            <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(i+<span class="number">1</span>, dna_size):</span><br><span class="line">                d = np.sqrt(np.square(self.cities[i][<span class="number">0</span>]-self.cities[j][<span class="number">0</span>])+</span><br><span class="line">                        np.square(self.cities[i][<span class="number">1</span>]-self.cities[j][<span class="number">1</span>]))</span><br><span class="line">                dist[i][j] = d</span><br><span class="line">                dist[j][i] = d</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> dist</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">computeCost</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        計算 Population 中每個答案的路徑成本, 成本為路徑中每對相鄰城市的距離加總</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        cost = np.zeros(self.pop_size)</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(self.pop_size):</span><br><span class="line">            x = self.pop[i]</span><br><span class="line">            y = np.roll(self.pop[i], -<span class="number">1</span>)</span><br><span class="line">            cost[i] = np.<span class="built_in">sum</span>(self.dist[x,y])</span><br><span class="line">        <span class="keyword">return</span> cost</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">select</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        根據 Individuals 的 cost 隨機淘汰和保留一些 Individual</span></span><br><span class="line"><span class="string">        Cost 越大則越有機會被淘汰, 越小越有機會被保留</span></span><br><span class="line"><span class="string">        這樣使用 numpy 的 reciprocal() 返回 cost 的倒數作為被選中的機率</span></span><br><span class="line"><span class="string">        Cost 越小則被選中的機率則大</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        p = np.reciprocal(self.cost)</span><br><span class="line">        idx = np.random.choice(np.arange(self.pop_size),size=self.pop_size,</span><br><span class="line">                                replace=<span class="literal">True</span>,p=p/p.<span class="built_in">sum</span>())</span><br><span class="line"></span><br><span class="line">        self.saveLastGen()</span><br><span class="line">        self.pop = self.pop[idx]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">saveLastGen</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        保存上一世代的 Population 訊息</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        self.last_pop = self.pop.copy()</span><br><span class="line">        self.last_cost = self.cost.copy()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">eliteSurvive</span>(<span class="params">self</span>):</span></span><br><span class="line">    	<span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">    	elitist selection: 讓上一世代強大的個體生存下去,取代下一世代弱小的個體</span></span><br><span class="line"><span class="string">    	&#x27;&#x27;&#x27;</span></span><br><span class="line">        <span class="comment"># 找出強大的個體</span></span><br><span class="line">        elite_idx = np.argsort(self.last_cost)[:self.n_elite]</span><br><span class="line">        elite_pop = self.last_pop[elite_idx]</span><br><span class="line">        elite_cost = self.last_cost[elite_idx]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 找出弱小的個體</span></span><br><span class="line">        weak_idx = np.argsort(self.cost)[::-<span class="number">1</span>][:self.n_elite]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 取代</span></span><br><span class="line">        self.pop[weak_idx] = elite_pop</span><br><span class="line">        self.cost[weak_idx] = elite_cost</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">crossover</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        crossover: Male 和 Female 有一定的機率交換基因</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(self.pop_size):</span><br><span class="line">            male = self.pop[i]</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> np.random.rand() &lt; self.co_rate:</span><br><span class="line">                _i = np.random.randint(self.pop_size)</span><br><span class="line">                female = self.pop[_i]</span><br><span class="line"></span><br><span class="line">                pos = np.random.randint(low=<span class="number">1</span>,high=self.dna_size,size=<span class="number">2</span>)</span><br><span class="line">                head = <span class="built_in">min</span>(pos)</span><br><span class="line">                tail = <span class="built_in">max</span>(pos)</span><br><span class="line"></span><br><span class="line">                <span class="comment"># 保留部分基因</span></span><br><span class="line">                keep_dna = male[head:tail]</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 交換其餘基因</span></span><br><span class="line">                male_exchange_dna_mask = ~np.isin(male, keep_dna)</span><br><span class="line">                male_exchange_dna = male[male_exchange_dna_mask]</span><br><span class="line"></span><br><span class="line">                female_exchange_dna_mask = ~np.isin(female, keep_dna)</span><br><span class="line">                female_exchange_dna = female[female_exchange_dna_mask]</span><br><span class="line"></span><br><span class="line">                male[male_exchange_dna_mask] = female_exchange_dna</span><br><span class="line">                female[female_exchange_dna_mask] = male_exchange_dna</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">mutation</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        mutation: 有一定的機率交換突變, 改變基因順序</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(self.pop_size):</span><br><span class="line">            <span class="keyword">if</span> np.random.rand() &lt; self.mut_rate:</span><br><span class="line">                pos = np.random.randint(low=<span class="number">1</span>,high=self.dna_size,size=<span class="number">2</span>)</span><br><span class="line">                temp = self.pop[i,pos[<span class="number">0</span>]]</span><br><span class="line">                self.pop[i,pos[<span class="number">0</span>]] = self.pop[i,pos[<span class="number">1</span>]]</span><br><span class="line">                self.pop[i,pos[<span class="number">1</span>]] = temp</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">updateCost</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="comment"># 更新 Population 中每個候選答案的成本</span></span><br><span class="line">        self.cost = self.computeCost()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">getBestPop</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="comment"># 返回最好的答案</span></span><br><span class="line">        idx = np.argmin(self.cost)</span><br><span class="line">        <span class="keyword">return</span> self.pop[idx], self.cost[idx]</span><br><span class="line"></span><br></pre></td></tr></table></figure> 
+
+<figure class="highlight python"><figcaption><span>main.py</span></figcaption><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> ga <span class="keyword">import</span> GA</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span>():</span></span><br><span class="line">    <span class="comment"># 定義 10 個城市的 x,y 座標</span></span><br><span class="line">    cities = [[<span class="number">0.3642</span>,<span class="number">0.7770</span>],</span><br><span class="line">              [<span class="number">0.7185</span>,<span class="number">0.8312</span>],</span><br><span class="line">              [<span class="number">0.0986</span>,<span class="number">0.5891</span>],</span><br><span class="line">              [<span class="number">0.2954</span>,<span class="number">0.9606</span>],</span><br><span class="line">              [<span class="number">0.5951</span>,<span class="number">0.4647</span>],</span><br><span class="line">              [<span class="number">0.6697</span>,<span class="number">0.7657</span>],</span><br><span class="line">              [<span class="number">0.4353</span>,<span class="number">0.1709</span>],</span><br><span class="line">              [<span class="number">0.2131</span>,<span class="number">0.8349</span>],</span><br><span class="line">              [<span class="number">0.3479</span>,<span class="number">0.6984</span>],</span><br><span class="line">              [<span class="number">0.4516</span>,<span class="number">0.0488</span>]]</span><br><span class="line">    n_city = <span class="built_in">len</span>(cities)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 設定迭代多少次世代</span></span><br><span class="line">    n_gen = <span class="number">100</span></span><br><span class="line"></span><br><span class="line">    ga = GA(cities, time_window,</span><br><span class="line">            start_city=<span class="number">0</span>, </span><br><span class="line">            population_size=<span class="number">100</span>, </span><br><span class="line">            crossover_rate=<span class="number">0.8</span>, </span><br><span class="line">            mutation_rate=<span class="number">0.1</span>,</span><br><span class="line">            elite_rate=<span class="number">0.1</span>,</span><br><span class="line">            seed=<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> gen <span class="keyword">in</span> <span class="built_in">range</span>(n_gen):</span><br><span class="line">        ga.select()</span><br><span class="line">        ga.crossover()</span><br><span class="line">        ga.mutation()</span><br><span class="line">        ga.updateCost()</span><br><span class="line">        ga.updateFitness()</span><br><span class="line">        ga.eliteSurvive()</span><br><span class="line"></span><br><span class="line">        path, cost = ga.getBestPop()</span><br><span class="line">        print(<span class="string">&#x27;Gen:&#123;&#125; Best path:&#123;&#125; Cost:&#123;&#125; &#x27;</span>.<span class="built_in">format</span>(gen+<span class="number">1</span>, path, cost))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure> 
+
+<h3 id="實驗結果"><a href="#實驗結果" class="headerlink" title="實驗結果"></a>實驗結果</h3><p>城市分佈：<br><img src="/2021/03/14/tsp-ga/cities.png" alt="城市分佈" title="城市分佈"></p>
+<p>訓練過程中 Cost 的變化 (數值越來越小，越小越好)：<br><img src="/2021/03/14/tsp-ga/cost_result.png" alt="Cost變化" title="Cost變化"></p>
+<p>不同起始城市的最佳路徑：<br><img src="/2021/03/14/tsp-ga/path_result.png" alt="最佳路徑" title="最佳路徑"></p>
+]]></content>
+      <categories>
+        <category>教學</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>GA</tag>
+        <tag>TSP</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VPS 連不上 GitHub 解決方法</title>
+    <url>/2021/04/28/vps-cannot-connect-github/</url>
+    <content><![CDATA[<p>最近筆者在阿里雲 <code>git clone</code> 或 <code> git pull</code> 時經常報錯如下:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">failed to connect to github.com port 443: connection timed out</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<p>解決方法:<br>打開 hosts 文件:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo nano &#x2F;etc&#x2F;hosts</span><br></pre></td></tr></table></figure>
+
+<p>加上下面一行:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">xx.xx.xx.xx github.com</span><br></pre></td></tr></table></figure>
+
+<p>xx.xx.xx.xx 為 GitHub 的 IP，可以透過 <code>ping github.com</code> 得到。</p>
+<p>清理 DNS cache:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo systemd-resolve --flush-caches</span><br><span class="line">or</span><br><span class="line">sudo service dnsmasq restart</span><br><span class="line">or</span><br><span class="line">sudo service nscd restart</span><br></pre></td></tr></table></figure>
+
+<p>完成！<br>*最後還是有小概率會連不上。</p>
+]]></content>
+      <categories>
+        <category>筆記</category>
+      </categories>
+      <tags>
+        <tag>GitHub</tag>
+        <tag>VPS</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>pip 報錯 Missing &#39;Version:&#39; header and/or METADATA file</title>
+    <url>/2022/03/22/pip-error/</url>
+    <content><![CDATA[<p>有時使用 pip 指令會出現以下錯誤：</p>
+<a id="more"></a>
+<p>日誌:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Exception:</span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&#x2F;Library&#x2F;Frameworks&#x2F;Python.framework&#x2F;Versions&#x2F;3.6&#x2F;lib&#x2F;python3.6&#x2F;site-packages&#x2F;pip&#x2F;_vendor&#x2F;pkg_resources&#x2F;__init__.py&quot;, line 2584, in version</span><br><span class="line">    return self._version</span><br><span class="line">  File &quot;&#x2F;Library&#x2F;Frameworks&#x2F;Python.framework&#x2F;Versions&#x2F;3.6&#x2F;lib&#x2F;python3.6&#x2F;site-packages&#x2F;pip&#x2F;_vendor&#x2F;pkg_resources&#x2F;__init__.py&quot;, line 2691, in __getattr__</span><br><span class="line">    raise AttributeError(attr)</span><br><span class="line">AttributeError: _version</span><br><span class="line"></span><br><span class="line">During handling of the above exception, another exception occurred:</span><br><span class="line"></span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File &quot;&#x2F;Library&#x2F;Frameworks&#x2F;Python.framework&#x2F;Versions&#x2F;3.6&#x2F;lib&#x2F;python3.6&#x2F;site-packages&#x2F;pip&#x2F;_internal&#x2F;cli&#x2F;base_command.py&quot;, line 176, in main</span><br><span class="line">    status &#x3D; self.run(options, args)</span><br><span class="line">  File &quot;&#x2F;Library&#x2F;Frameworks&#x2F;Python.framework&#x2F;Versions&#x2F;3.6&#x2F;lib&#x2F;python3.6&#x2F;site-packages&#x2F;pip&#x2F;_internal&#x2F;commands&#x2F;list.py&quot;, line 148, in run</span><br><span class="line">    self.output_package_listing(packages, options)</span><br><span class="line">  File &quot;&#x2F;Library&#x2F;Frameworks&#x2F;Python.framework&#x2F;Versions&#x2F;3.6&#x2F;lib&#x2F;python3.6&#x2F;site-packages&#x2F;pip&#x2F;_internal&#x2F;commands&#x2F;list.py&quot;, line 205, in output_package_listing</span><br><span class="line">    data, header &#x3D; format_for_columns(packages, options)</span><br><span class="line">  File &quot;&#x2F;Library&#x2F;Frameworks&#x2F;Python.framework&#x2F;Versions&#x2F;3.6&#x2F;lib&#x2F;python3.6&#x2F;site-packages&#x2F;pip&#x2F;_internal&#x2F;commands&#x2F;list.py&quot;, line 271, in format_for_columns</span><br><span class="line">    row &#x3D; [proj.project_name, proj.version]</span><br><span class="line">  File &quot;&#x2F;Library&#x2F;Frameworks&#x2F;Python.framework&#x2F;Versions&#x2F;3.6&#x2F;lib&#x2F;python3.6&#x2F;site-packages&#x2F;pip&#x2F;_vendor&#x2F;pkg_resources&#x2F;__init__.py&quot;, line 2589, in version</span><br><span class="line">    raise ValueError(tmpl % self.PKG_INFO, self)</span><br><span class="line">ValueError: (&quot;Missing &#39;Version:&#39; header and&#x2F;or METADATA file&quot;, Unknown [unknown version] (&#x2F;Library&#x2F;Frameworks&#x2F;Python.framework&#x2F;Versions&#x2F;3.6&#x2F;lib&#x2F;python3.6&#x2F;site-packages))</span><br></pre></td></tr></table></figure>
+
+<h3 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h3><p>site-package 目錄下有毀壞了或安裝失敗的文件夾，一般是’-‘開頭的文件夾。</p>
+<h3 id="解決方法"><a href="#解決方法" class="headerlink" title="解決方法"></a>解決方法</h3><p>把 site-package 目錄下’-‘開頭的文件夾都全刪掉，因為是安裝失敗的文件夾，所以可以放心刪掉。</p>
+]]></content>
+      <categories>
+        <category>筆記</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
+        <tag>NLP</tag>
+        <tag>Pip</tag>
+      </tags>
+  </entry>
+</search>

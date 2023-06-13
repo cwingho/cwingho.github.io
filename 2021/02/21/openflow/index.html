@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.svg">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"我們無法找到任何有關 ${query} 的搜索結果","hits_time":"${hits} 結果在 ${time} 毫秒找到","hits":"找到 ${hits} 個結果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="OpenFlow，一種網路通訊協定，屬於數據鏈路層，能夠控制網路交換器或路由器的轉發平面（forwarding plane），藉此改變網路封包所走的網路路徑。 Wikipediazh.wikipedia.org&#x2F;wiki&#x2F;OpenFlow">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenFlow 介紹">
+<meta property="og:url" content="http://example.com/2021/02/21/openflow/index.html">
+<meta property="og:site_name" content="Brian Chan 筆記">
+<meta property="og:description" content="OpenFlow，一種網路通訊協定，屬於數據鏈路層，能夠控制網路交換器或路由器的轉發平面（forwarding plane），藉此改變網路封包所走的網路路徑。 Wikipediazh.wikipedia.org&#x2F;wiki&#x2F;OpenFlow">
+<meta property="og:locale" content="zh_HK">
+<meta property="og:image" content="https://www.researchgate.net/profile/Amitava-Mukherjee-4/publication/313794056/figure/fig5/AS:667625650671623@1536185767264/Key-components-of-OpenFlow-switch.jpg">
+<meta property="article:published_time" content="2021-02-20T18:18:11.000Z">
+<meta property="article:modified_time" content="2022-02-02T07:30:25.039Z">
+<meta property="article:author" content="Brian Chan">
+<meta property="article:tag" content="Openflow">
+<meta property="article:tag" content="Network">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://www.researchgate.net/profile/Amitava-Mukherjee-4/publication/313794056/figure/fig5/AS:667625650671623@1536185767264/Key-components-of-OpenFlow-switch.jpg">
+
+
+<link rel="canonical" href="http://example.com/2021/02/21/openflow/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-HK","comments":true,"permalink":"http://example.com/2021/02/21/openflow/","path":"2021/02/21/openflow/","title":"OpenFlow 介紹"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>OpenFlow 介紹 | Brian Chan 筆記</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M67MDLE8LV"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-M67MDLE8LV","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+<!-- <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script> -->
+
+<script data-ad-client="ca-pub-2899165372844878" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2899165372844878"
+     crossorigin="anonymous"></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切換導航欄" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Brian Chan 筆記</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">科技｜技術｜教學｜原創</p>
+      <img class="custom-logo-image" src="/images/logo.svg" alt="Brian Chan 筆記">
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首頁</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>標籤<span class="badge">41</span></a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分類<span class="badge">5</span></a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>歸檔<span class="badge">24</span></a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-coffee fa-fw"></i>關於</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>檢索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目錄
+        </li>
+        <li class="sidebar-nav-overview">
+          本站概覽
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%8F%BE%E6%9C%89%E8%A7%A3%E6%B1%BA%E6%96%B9%E6%A1%88%E5%92%8C%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">2.</span> <span class="nav-text">現有解決方案和局限性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E6%B1%BA%E6%96%B9%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">解決方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A9%95%E4%BC%B0"><span class="nav-number">4.</span> <span class="nav-text">評估</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A2%9D%E4%BB%B6"><span class="nav-number">5.</span> <span class="nav-text">條件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%99%90%E5%88%B6"><span class="nav-number">6.</span> <span class="nav-text">限制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%BD%9B%E5%9C%A8%E5%95%8F%E9%A1%8C"><span class="nav-number">7.</span> <span class="nav-text">潛在問題</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B0%8F%E7%B8%BD%E7%B5%90"><span class="nav-number">8.</span> <span class="nav-text">小總結</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Brian Chan</p>
+  <div class="site-description" itemprop="description">Stay Hungry Stay Foolish</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">文章</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分類</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">標籤</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/cwingho" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;cwingho" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chanwingho94@gmail.com" title="E-Mail → mailto:chanwingho94@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license site-overview-item animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="回到頂部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-HK">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/21/openflow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Brian Chan">
+      <meta itemprop="description" content="Stay Hungry Stay Foolish">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Brian Chan 筆記">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          OpenFlow 介紹
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">發表於</span>
+
+      <time title="創建時間：2021-02-21 02:18:11" itemprop="dateCreated datePublished" datetime="2021-02-21T02:18:11+08:00">2021-02-21</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新於</span>
+        <time title="修改時間：2022-02-02 15:30:25" itemprop="dateModified" datetime="2022-02-02T15:30:25+08:00">2022-02-02</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分類於</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E9%96%8B%E5%8D%B7%E6%9C%89%E7%9B%8A/" itemprop="url" rel="index"><span itemprop="name">開卷有益</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="閱讀次數" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀次數：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2021/02/21/openflow/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2021/02/21/openflow/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字數">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字數：</span>
+      <span>2.7k</span>
+    </span>
+    <span class="post-meta-item" title="閱讀時長">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀時長 &asymp;</span>
+      <span>2 分鍾</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <blockquote><p>OpenFlow，一種網路通訊協定，屬於數據鏈路層，能夠控制網路交換器或路由器的轉發平面（forwarding plane），藉此改變網路封包所走的網路路徑。</p>
+<footer><strong>Wikipedia</strong><cite><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/OpenFlow">zh.wikipedia.org/wiki/OpenFlow</a></cite></footer></blockquote>
+
+<a id="more"></a>
+<hr>
+<p>本文內容是整合自文章：</p>
+<blockquote>
+<p>Nick McKeown, Tom Anderson, Hari Balakrishnan, Guru Parulkar, Larry Peterson, Jennifer Rexford, Scott Shenker, and Jonathan Turner. 2008. OpenFlow: enabling innovation in campus networks. SIGCOMM Comput. Commun. Rev. 38, 2 (April 2008), 69–74. DOI:<a target="_blank" rel="noopener" href="https://doi.org/10.1145/1355734.1355746">https://doi.org/10.1145/1355734.1355746</a></p>
+</blockquote>
+<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>每當學者們對網絡工程有什麼新想法時，往往需要把新想法應用到現實網絡來測試結果。文中作者認為一般學者所發明的網絡新技術已經很難對現實世界產生大影響，因為研究人員很難在現實世界的網絡中測試他們的發明和實驗他們的新想法，結果形成了對現有網絡基建進步的障礙。</p>
+<p>作者覺得網絡的基礎設施已經僵硬化，很難在現實世界中嘗試使用新的 protocol。此外，由於預算有限，學者們也無法輕易地將為實驗特別訂制定制的設備(如router等)投放到現實網絡中做實驗。一般設備的供應商也因商業機密的考慮而無法提供API供研究人員們設定實驗用的參數。</p>
+<p>最終的結果就是，大多數論文中提出想法或新技術都沒有經過充分實驗，顯得沒有那麼權威，缺了點說服力。</p>
+<h3 id="現有解決方案和局限性"><a href="#現有解決方案和局限性" class="headerlink" title="現有解決方案和局限性"></a>現有解決方案和局限性</h3><p>為了解決些述問題，人們提出了一些現有的解決方案。然而，這些方法並不能真正使研究人員滿意，也無法完美地解決問題。坊間是有一些 Open-source 的軟件平台供人們設置自己實驗用的設備和還境。例如使用電腦來模擬switch(不是任天堂的switch……)，但是模擬設備對packet的處理速度比較慢並且port口的數量也不夠。儘管也有一些提供programming interface 的 router 可以高速同時處理多個 packet，但是成本卻過高。</p>
+<h3 id="解決方法"><a href="#解決方法" class="headerlink" title="解決方法"></a>解決方法</h3><p>文章介紹了 Openflow 來解決問題。它是一種開源的 protocol，允許人們以標準/協議好的方式對router或switch進行編程。 </p>
+<p>Openflow的思想是將control plane (控制平面)與設備給分離開來，並允許用戶透過controller來自定義設備的Forward policy。通過Remote control，用戶可以輕鬆地更改router/switch 的Flow table。它為研究人員提供了一個對router或switch進行編程的平台。藉著Openflow，網絡中的一部分資源便可以分配給研究人員來測試他們的發明，因為它可以將實驗的數據流與其他數據流給隔離。</p>
+<blockquote><img src="https://www.researchgate.net/profile/Amitava-Mukherjee-4/publication/313794056/figure/fig5/AS:667625650671623@1536185767264/Key-components-of-OpenFlow-switch.jpg" alt="Key components of OpenFlow switch" width="30%"><footer><strong>Fault Tracking Framework for SDN</strong><cite><a target="_blank" rel="noopener" href="https://www.researchgate.net/figure/Key-components-of-OpenFlow-switch_fig5_313794056">www.researchgate.net/figure/Key-components-of-OpenFlow-switch_fig5_313794056</a></cite></footer></blockquote>
+
+<h3 id="評估"><a href="#評估" class="headerlink" title="評估"></a>評估</h3><p>Openflow與傳統的解決方法不同，它不需要更改硬件配置。生產商可以直接將Openflow預安裝到設備中。由於這些設備是可編程的，因此與傳統router/swtich相比，它提供了更多的靈活性和功能。對於研究人員而言，它更具成本效益且更加方便。</p>
+<h3 id="條件"><a href="#條件" class="headerlink" title="條件"></a>條件</h3><p>筆者整個了要把Openflow應用到現實網絡的2個前題。</p>
+<ol>
+<li><p><strong>設備不能頻繁更改。</strong>Openflow 交換器的機制是，當無法決定 packet 的 outgoing port 時，switch會將整個 packet 發送給 controller，讓控制器作決策。如果網絡中的設備不斷更改，交換器在轉發數據包時經常將整個數據包發送到控制器，造成了不必要的流量，則可能形成擠擁，降低整體網絡的性能。</p>
+</li>
+<li><p><strong>實驗產生的流量不會過度影響現實網絡的流量。</strong>由於研究人員可以改變 Openflow switch 的運作，對於某些實驗，交換器有可能會將所有數據包轉發到 controller，或者丟棄所有數據包。在這種情況下，現實網絡的數據包可能會無法到達目的地。因此，要將Openflow應用於現有網絡，必需要保證實驗不會影響現實網絡。</p>
+</li>
+</ol>
+<p>所以，要解決學者們的痛點，選擇解決方法，需要符合下面4個條件。</p>
+<ol>
+<li>設備必須是高性能和低成本的。</li>
+<li>解決方法必須支持不同的研究領域。</li>
+<li>解決方法必須能夠分離實驗用網絡流量和其他網絡流量。</li>
+<li>解決方法必須使生產商滿意，並保護他們的權益。</li>
+</ol>
+<p>而Openflow則可滿足上述的要求。由於生產商可以將Openflow預裝到交換器中，因此它不會產生額外的成本，並且供應商不需要向公眾公開其產品的內部信息。</p>
+<p>但是，在設計解決方案時需要權衡取捨。這是設備性能和功能之間的平衡。由於可以定Forward policy，因此設備不再只是簡單的Store &amp; forward。Openflow 交換器在轉發數據包之前可能需要與控制器溝通。由於數據包處理時間增加，因此可能會導致延遲。</p>
+<p>在成本和性能上還有另一個權衡。由於交換器的數據包處理時間取決於其CPU。如果研究人員想要減少處理時間以提高設備性能，則需要使用更好的CPU，從而導致成本上升。</p>
+<h3 id="限制"><a href="#限制" class="headerlink" title="限制"></a>限制</h3><p>Openflow為交換器提供了靈活性。由於其可以擁有自己複雜的轉發策略，而不僅僅是Store &amp; forward，因此它會有更多的計算量。結果，OpenFlow 交換器可能需要比傳統交換器有更好的硬件配置。儘管不需要任何額外的硬件，但需要更高性能的CPU。這可能會增加專用OpenFlow交換機的成本。</p>
+<p>此外，供應商對Openflow的支持可能還不夠。Openflow是由生產商安裝到交換器中，而軟件升級和補丁只能由供應商提供。如果供應商終止了對交換器型號的支持，用戶很難自行手動升級Openflow。</p>
+<h3 id="潛在問題"><a href="#潛在問題" class="headerlink" title="潛在問題"></a>潛在問題</h3><p>因為用戶可以通過Openflow中的控制器更改交換機的Flow table，這可能會產生一些的安全問題。黑客可以入侵控制器並修改交換器的設定。所以，Openflow必須要有保護控制器免受攻擊的機制和被到更擊時的應對與恢復機制。</p>
+<p>另外，隨著Openflow版本不斷更新，Openflow在需要保證不同版本和不同品牌的交換器之間的兼容性。同時也可考慮在不停機的情況下升級已安裝設備的Openflow版本。</p>
+<h3 id="小總結"><a href="#小總結" class="headerlink" title="小總結"></a>小總結</h3><p>以上是筆者整合文章的內容和一些自己的見解，有興趣的朋友可以自己下載文章看看。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>博主： </strong>Brian Chan
+  </li>
+  <li class="post-copyright-link">
+      <strong>文章連結：</strong>
+      <a href="http://example.com/2021/02/21/openflow/" title="OpenFlow 介紹">http://example.com/2021/02/21/openflow/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版權聲明： </strong>本網誌所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 許可協議。轉載請註明出處！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Openflow/" rel="tag"><i class="fa fa-tag"></i> Openflow</a>
+              <a href="/tags/Network/" rel="tag"><i class="fa fa-tag"></i> Network</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/02/19/github-page-custom-domain/" rel="prev" title="在 GitHub Pages 上使用自定 Domain">
+                  <i class="fa fa-chevron-left"></i> 在 GitHub Pages 上使用自定 Domain
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/02/22/gitignore-not-work/" rel="next" title=".gitignore 不生效的原因和解決方法">
+                  .gitignore 不生效的原因和解決方法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2021 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Brian Chan</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站點總字數">62k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站點閱讀時長">56 分鍾</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="訪客總數">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="總瀏覽次數">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 強力驅動
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js" integrity="sha256-j+yj56cdEY2CwkVtGyz18fNybFGpMGJ8JxG3GSyO2+I=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"http://example.com/2021/02/21/openflow/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"botnotes","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+<script type="text/javascript" size="300" alpha='0.6' zIndex="-1" src="/js/ribbon.js"></script>
+</body>
+</html>

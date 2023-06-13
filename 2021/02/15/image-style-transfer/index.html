@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.svg">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"我們無法找到任何有關 ${query} 的搜索結果","hits_time":"${hits} 結果在 ${time} 毫秒找到","hits":"找到 ${hits} 個結果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="Neural Style Transfer (神經風格轉換) 是 Deep Learning 中 Convolution Neural Network (卷積神經網絡) 的其中一種應用之一。NST 可以透過深度神經網絡算法捕捉到圖像的風格，然後應用到其他圖像上面進行風格轉換。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="只要有心 人人都可以係畫家">
+<meta property="og:url" content="http://example.com/2021/02/15/image-style-transfer/index.html">
+<meta property="og:site_name" content="Brian Chan 筆記">
+<meta property="og:description" content="Neural Style Transfer (神經風格轉換) 是 Deep Learning 中 Convolution Neural Network (卷積神經網絡) 的其中一種應用之一。NST 可以透過深度神經網絡算法捕捉到圖像的風格，然後應用到其他圖像上面進行風格轉換。">
+<meta property="og:locale" content="zh_HK">
+<meta property="og:image" content="http://example.com/2021/02/15/image-style-transfer/showcase.png">
+<meta property="og:image" content="http://example.com/2021/02/15/image-style-transfer/nst_structure.png">
+<meta property="og:image" content="http://example.com/2021/02/15/image-style-transfer/loss_func.png">
+<meta property="og:image" content="http://example.com/2021/02/15/image-style-transfer/result_1.png">
+<meta property="og:image" content="http://example.com/2021/02/15/image-style-transfer/result_2.png">
+<meta property="og:image" content="http://example.com/2021/02/15/image-style-transfer/result_3.png">
+<meta property="og:image" content="http://example.com/2021/02/15/image-style-transfer/result_4.png">
+<meta property="article:published_time" content="2021-02-15T13:48:19.000Z">
+<meta property="article:modified_time" content="2022-02-02T07:30:25.021Z">
+<meta property="article:author" content="Brian Chan">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="Deep Learning">
+<meta property="article:tag" content="CNN">
+<meta property="article:tag" content="Style transfer">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2021/02/15/image-style-transfer/showcase.png">
+
+
+<link rel="canonical" href="http://example.com/2021/02/15/image-style-transfer/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-HK","comments":true,"permalink":"http://example.com/2021/02/15/image-style-transfer/","path":"2021/02/15/image-style-transfer/","title":"只要有心 人人都可以係畫家"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>只要有心 人人都可以係畫家 | Brian Chan 筆記</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M67MDLE8LV"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-M67MDLE8LV","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+<!-- <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script> -->
+
+<script data-ad-client="ca-pub-2899165372844878" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2899165372844878"
+     crossorigin="anonymous"></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切換導航欄" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Brian Chan 筆記</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">科技｜技術｜教學｜原創</p>
+      <img class="custom-logo-image" src="/images/logo.svg" alt="Brian Chan 筆記">
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首頁</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>標籤<span class="badge">41</span></a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分類<span class="badge">5</span></a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>歸檔<span class="badge">24</span></a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-coffee fa-fw"></i>關於</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>檢索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目錄
+        </li>
+        <li class="sidebar-nav-overview">
+          本站概覽
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%9E%8B"><span class="nav-number">2.</span> <span class="nav-text">模型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Code"><span class="nav-number">2.1.</span> <span class="nav-text">Code</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Network-structure"><span class="nav-number">2.2.</span> <span class="nav-text">Network structure</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Loss-function"><span class="nav-number">2.3.</span> <span class="nav-text">Loss function</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%A6%E9%A9%97%E7%B5%90%E6%9E%9C"><span class="nav-number">3.</span> <span class="nav-text">實驗結果</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%83%E8%80%83"><span class="nav-number">4.</span> <span class="nav-text">參考</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Brian Chan</p>
+  <div class="site-description" itemprop="description">Stay Hungry Stay Foolish</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">文章</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分類</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">標籤</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/cwingho" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;cwingho" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chanwingho94@gmail.com" title="E-Mail → mailto:chanwingho94@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license site-overview-item animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="回到頂部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-HK">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/15/image-style-transfer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Brian Chan">
+      <meta itemprop="description" content="Stay Hungry Stay Foolish">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Brian Chan 筆記">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          只要有心 人人都可以係畫家
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">發表於</span>
+
+      <time title="創建時間：2021-02-15 21:48:19" itemprop="dateCreated datePublished" datetime="2021-02-15T21:48:19+08:00">2021-02-15</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新於</span>
+        <time title="修改時間：2022-02-02 15:30:25" itemprop="dateModified" datetime="2022-02-02T15:30:25+08:00">2022-02-02</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分類於</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E8%A1%93%E5%AF%A6%E6%88%B0/" itemprop="url" rel="index"><span itemprop="name">技術實戰</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="閱讀次數" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀次數：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2021/02/15/image-style-transfer/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2021/02/15/image-style-transfer/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字數">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字數：</span>
+      <span>2.2k</span>
+    </span>
+    <span class="post-meta-item" title="閱讀時長">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀時長 &asymp;</span>
+      <span>2 分鍾</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p><strong>Neural Style Transfer (神經風格轉換)</strong> 是 Deep Learning 中 Convolution Neural Network (卷積神經網絡) 的其中一種應用之一。NST 可以透過深度神經網絡算法捕捉到圖像的風格，然後應用到其他圖像上面進行風格轉換。</p>
+<a id="more"></a>
+
+<p>下圖是筆者執行程式後的結果之一。<br><img src="/2021/02/15/image-style-transfer/showcase.png" alt="NST例子" title="NST例子"></p>
+<h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>Gatys 在 2015 年提出了一種用於風格轉換的神經網絡算法 [1]。這個方法有別於傳統基於統計學的風格轉換，他提供了一個通用的解決方案。人們可以使用同一樣結構的 NST 模型學習出不同圖像風格。於是，NST漸漸變得流行，並引起了科研人們的注意。</p>
+<p>大家都可以在網上中找到很多不同的NST模型，那些模型旨在通過五花八門的方法和 CNN 模型生成出不同的圖片。它們透過不同風格的照片甚至視頻，生成出有趣、出人意料的結果，例如字符風格轉換 [2] 和立體風格轉換 [3]。</p>
+<h3 id="模型"><a href="#模型" class="headerlink" title="模型"></a>模型</h3><h4 id="Code"><a href="#Code" class="headerlink" title="Code"></a>Code</h4><p>代碼是取自 <a target="_blank" rel="noopener" href="https://keras.io/examples/generative/neural_style_transfer/">Keras.io</a> NST 的例子 - <a target="_blank" rel="noopener" href="https://github.com/keras-team/keras-io/blob/master/examples/generative/neural_style_transfer.py">Github</a></p>
+<h4 id="Network-structure"><a href="#Network-structure" class="headerlink" title="Network structure"></a>Network structure</h4><p>Gatys 表示，可以通過更改圖像的顏色和紋理來轉換圖像風格 [1]。 因此，<strong>NST 的核心就是從內容圖像和風格圖像中提取特徵，找到並最小化它們的特徵與輸出圖像的特徵之間的差距。</strong> 模型的輸入是兩張圖片，分別是內容圖片和風格圖片。模型將要從風格圖片中提取風格並應用到內容圖片上，從而生成一張新的圖片。</p>
+<p>NST 會在開始時隨機生成輸出圖像（無意義的圖像）。然後使用預先訓練好的模型（例如VGG19或VGG16）來提取指定卷積層上所有圖像（內容圖像、風格圖像、輸出圖像）的特徵圖 (Feature map)。 之後，NST 計算三者之間的 Loss。 接下來通過梯度下降 (Gradient Descent) 更新圖像像素 (不是神經網絡本身)。整個模型的結構如下：<br><img src="/2021/02/15/image-style-transfer/nst_structure.png" alt="NST structure" title="NST structure"></p>
+<h4 id="Loss-function"><a href="#Loss-function" class="headerlink" title="Loss function"></a>Loss function</h4><p>相信工程師們對 CNN 和 VGG 都不陌生，網上有很多教學資料，筆者便不在這裡多說了。唯一想要提及的是 NST 中使用到的 <strong>Grim matrix</strong>，它是用來表示風格圖像和輸出圖像的特徵。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.zhihu.com/question/49805962">如何用简单易懂的例子解释格拉姆矩阵/Gram matrix？</a></p>
+</blockquote>
+<p>這裡已經很詳細的解釋了 Grim matrix 的公式和意義。簡單來說，Grim matrix 代表了輸入圖像的每個 Feature map 之間相關性。若兩張圖片的 Grim Matrix 相似，則表示兩張圖片的風格很接近。NST 便是利用這個特性來建立模型的 Loss function。公式如下:<br><img src="/2021/02/15/image-style-transfer/loss_func.png" alt="NST Loss function" title="NST Loss function"></p>
+<p>F 和 P 表示第 l 層中內容圖像和輸出圖像的特徵圖。 G 和 A 表示風格圖像特徵和輸出圖像特徵的 Gram matrix，w 表示當前的權重。N是 Feature map 的數量，而 M 則是 Feature map 的大小。 a 和 b 是 Loss function 的 Weight，由用戶自行設定。 所有 Feature map 皆從 VGG19 的最後一個 CNN 層提取。</p>
+<p>Loss function 主要有兩個部份：</p>
+<ol>
+<li><p>Style loss：用以保持輸出圖像的風格與風格圖像的風格相似。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">style_loss</span>(<span class="params">style, combination</span>):</span></span><br><span class="line">    S = gram_matrix(style)</span><br><span class="line">    C = gram_matrix(combination)</span><br><span class="line">    channels = <span class="number">3</span></span><br><span class="line">    size = img_nrows * img_ncols</span><br><span class="line">    <span class="keyword">return</span> tf.reduce_sum(tf.square(S - C)) / (<span class="number">4.0</span> * (channels ** <span class="number">2</span>) * (size ** <span class="number">2</span>))</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Content loss：用以保持輸出圖像的內容與內容圖像的內容相似。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">content_loss</span>(<span class="params">base, combination</span>):</span></span><br><span class="line">    <span class="keyword">return</span> tf.reduce_sum(tf.square(combination - base))</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<p>大致可以理解成 Style loss 保留風格圖像的紋理；Content loss 保留內容圖像的輪廓/內容，這很好理解吧。</p>
+<h3 id="實驗結果"><a href="#實驗結果" class="headerlink" title="實驗結果"></a>實驗結果</h3><img src="result_1.png" width="90%">
+<img src="result_2.png" width="90%">
+<img src="result_3.png" width="90%">
+<img src="result_4.png" width="50%">
+
+<p>以上是筆者的測試結果。主觀來看，第一組圖效果還是挺好的，生成的圖像有著兩張輸入圖像的影子。至於第二組圖明顯就是出錯了，NST 錯把天上紅色的風格應用到建築物上。而第三組就看得筆者有點眼花了，放大圖像會發現整張圖都佈滿了迷之紋理，也許調整一下 Loss function 中 <code>style_weight</code> 和 <code>content_weight</code> 和其他參數可以改善效果。這就有待讀者們自行實驗了。</p>
+<h3 id="參考"><a href="#參考" class="headerlink" title="參考"></a>參考</h3><blockquote>
+<p>[1]    L. Gatys, A. Ecker, and M. Bethge, “A neural algorithm of artistic style”, Nature Communications, 2015.<br>[2]    G. Atarsaikhan, B. K. Iwana, A. Narusawa, K. Yanai, and S. Uchida, “Neural font style transfer,” Proceedings of the IAPR International Conference on Document Analysis and Recognition, vol. 5, pp. 51-56, 2017.<br>[3]    D. Chen, L. Yuan, J. Liao, N. Yu, and G. Hua, “Stereoscopic neural style transfer,” Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition, 2018.</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>博主： </strong>Brian Chan
+  </li>
+  <li class="post-copyright-link">
+      <strong>文章連結：</strong>
+      <a href="http://example.com/2021/02/15/image-style-transfer/" title="只要有心 人人都可以係畫家">http://example.com/2021/02/15/image-style-transfer/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版權聲明： </strong>本網誌所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 許可協議。轉載請註明出處！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+              <a href="/tags/Deep-Learning/" rel="tag"><i class="fa fa-tag"></i> Deep Learning</a>
+              <a href="/tags/CNN/" rel="tag"><i class="fa fa-tag"></i> CNN</a>
+              <a href="/tags/Style-transfer/" rel="tag"><i class="fa fa-tag"></i> Style transfer</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/02/15/fuzzy-stock/" rel="prev" title="使用 Python 編寫基於模糊邏輯的AI股票預測系統">
+                  <i class="fa fa-chevron-left"></i> 使用 Python 編寫基於模糊邏輯的AI股票預測系統
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/02/16/nvram/" rel="next" title="RAM，硬碟將來會被淘汰？淺談 NVRAM 未來的影響">
+                  RAM，硬碟將來會被淘汰？淺談 NVRAM 未來的影響 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2021 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Brian Chan</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站點總字數">62k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站點閱讀時長">56 分鍾</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="訪客總數">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="總瀏覽次數">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 強力驅動
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js" integrity="sha256-j+yj56cdEY2CwkVtGyz18fNybFGpMGJ8JxG3GSyO2+I=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"http://example.com/2021/02/15/image-style-transfer/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"botnotes","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+<script type="text/javascript" size="300" alpha='0.6' zIndex="-1" src="/js/ribbon.js"></script>
+</body>
+</html>

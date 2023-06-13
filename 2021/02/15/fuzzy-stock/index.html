@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.svg">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"我們無法找到任何有關 ${query} 的搜索結果","hits_time":"${hits} 結果在 ${time} 毫秒找到","hits":"找到 ${hits} 個結果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="股票交易的決策十分複雜。專業的交易員會使用許多技術指標 (Technical Indicator) 來研究市場趨勢和分析股票，並根據經驗和觀察做出買​​賣決策。為了使電腦也能學會分析技術指標做決策，本文將使用模糊邏輯 (Fuzzy Logic) 來模擬一個 AI 交易員。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用 Python 編寫基於模糊邏輯的AI股票預測系統">
+<meta property="og:url" content="http://example.com/2021/02/15/fuzzy-stock/index.html">
+<meta property="og:site_name" content="Brian Chan 筆記">
+<meta property="og:description" content="股票交易的決策十分複雜。專業的交易員會使用許多技術指標 (Technical Indicator) 來研究市場趨勢和分析股票，並根據經驗和觀察做出買​​賣決策。為了使電腦也能學會分析技術指標做決策，本文將使用模糊邏輯 (Fuzzy Logic) 來模擬一個 AI 交易員。">
+<meta property="og:locale" content="zh_HK">
+<meta property="og:image" content="http://example.com/2021/02/15/fuzzy-stock/fuzzy_logic_vs_trad_logic.png">
+<meta property="og:image" content="http://example.com/2021/02/15/fuzzy-stock/membership_func.jpg">
+<meta property="article:published_time" content="2021-02-15T07:29:23.000Z">
+<meta property="article:modified_time" content="2022-02-02T07:30:25.017Z">
+<meta property="article:author" content="Brian Chan">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="AI">
+<meta property="article:tag" content="Stock">
+<meta property="article:tag" content="Fuzzy Logic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2021/02/15/fuzzy-stock/fuzzy_logic_vs_trad_logic.png">
+
+
+<link rel="canonical" href="http://example.com/2021/02/15/fuzzy-stock/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-HK","comments":true,"permalink":"http://example.com/2021/02/15/fuzzy-stock/","path":"2021/02/15/fuzzy-stock/","title":"使用 Python 編寫基於模糊邏輯的AI股票預測系統"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>使用 Python 編寫基於模糊邏輯的AI股票預測系統 | Brian Chan 筆記</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M67MDLE8LV"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-M67MDLE8LV","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+<!-- <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script> -->
+
+<script data-ad-client="ca-pub-2899165372844878" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2899165372844878"
+     crossorigin="anonymous"></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切換導航欄" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Brian Chan 筆記</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">科技｜技術｜教學｜原創</p>
+      <img class="custom-logo-image" src="/images/logo.svg" alt="Brian Chan 筆記">
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首頁</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>標籤<span class="badge">41</span></a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分類<span class="badge">5</span></a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>歸檔<span class="badge">24</span></a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-coffee fa-fw"></i>關於</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>檢索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目錄
+        </li>
+        <li class="sidebar-nav-overview">
+          本站概覽
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E9%BA%BC%E6%98%AFFuzzy-Logic"><span class="nav-number">1.</span> <span class="nav-text">什麼是Fuzzy Logic?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E9%BA%BC%E6%98%AFMembership-Function"><span class="nav-number">2.</span> <span class="nav-text">什麼是Membership Function?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E9%BA%BC%E6%98%AFRule"><span class="nav-number">3.</span> <span class="nav-text">什麼是Rule?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%A6%E7%8F%BE"><span class="nav-number">4.</span> <span class="nav-text">實現</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#STEP-1-%E5%AE%89%E8%A3%9D%E7%9B%B8%E9%97%9Clib"><span class="nav-number">4.1.</span> <span class="nav-text">STEP 1: 安裝相關lib</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#STEP-2-%E6%B1%BA%E5%AE%9A%E9%9C%80%E8%A6%81%E7%94%A8%E5%88%B0%E7%9A%84%E6%8A%80%E8%A1%93%E6%8C%87%E6%A8%99"><span class="nav-number">4.2.</span> <span class="nav-text">STEP 2: 決定需要用到的技術指標</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#STEP-3-%E5%AE%9A%E7%BE%A9-Membership-Function"><span class="nav-number">4.3.</span> <span class="nav-text">STEP 3: 定義 Membership Function</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#STEP-4-%E5%AE%9A%E7%BE%A9-Rule-Membership-Function"><span class="nav-number">4.4.</span> <span class="nav-text">STEP 4: 定義 Rule Membership Function</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#STEP-5-%E7%B7%A8%E7%A8%8B"><span class="nav-number">4.5.</span> <span class="nav-text">STEP 5: 編程</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Brian Chan</p>
+  <div class="site-description" itemprop="description">Stay Hungry Stay Foolish</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">文章</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分類</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">標籤</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/cwingho" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;cwingho" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chanwingho94@gmail.com" title="E-Mail → mailto:chanwingho94@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license site-overview-item animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="回到頂部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-HK">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/15/fuzzy-stock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Brian Chan">
+      <meta itemprop="description" content="Stay Hungry Stay Foolish">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Brian Chan 筆記">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用 Python 編寫基於模糊邏輯的AI股票預測系統
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">發表於</span>
+
+      <time title="創建時間：2021-02-15 15:29:23" itemprop="dateCreated datePublished" datetime="2021-02-15T15:29:23+08:00">2021-02-15</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新於</span>
+        <time title="修改時間：2022-02-02 15:30:25" itemprop="dateModified" datetime="2022-02-02T15:30:25+08:00">2022-02-02</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分類於</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E8%A1%93%E5%AF%A6%E6%88%B0/" itemprop="url" rel="index"><span itemprop="name">技術實戰</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="閱讀次數" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀次數：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2021/02/15/fuzzy-stock/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2021/02/15/fuzzy-stock/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字數">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字數：</span>
+      <span>3.2k</span>
+    </span>
+    <span class="post-meta-item" title="閱讀時長">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀時長 &asymp;</span>
+      <span>3 分鍾</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>股票交易的決策十分複雜。專業的交易員會使用許多<strong>技術指標 (Technical Indicator)</strong> 來研究市場趨勢和分析股票，並根據經驗和觀察做出買​​賣決策。為了使電腦也能學會分析技術指標做決策，本文將使用<strong>模糊邏輯 (Fuzzy Logic)</strong> 來模擬一個 AI 交易員。</p>
+<a id="more"></a>
+
+<p>本文會用 <strong>Python3</strong> 編寫一個簡單的股票預測系統，用作決策參考，讓用家決定是否<strong>買入 (Buy)</strong> ，<strong>賣出 (Sell)</strong> ，或繼續<strong>持有股票 (Hold)</strong> 。通過模糊邏輯，系統可以輕鬆地結合多個技術指標並且根據事先定下的<strong>規則 (Rule)</strong> 作出決策。</p>
+<p>下面先簡單介紹下幾個專用詞。</p>
+<hr>
+<h3 id="什麼是Fuzzy-Logic"><a href="#什麼是Fuzzy-Logic" class="headerlink" title="什麼是Fuzzy Logic?"></a>什麼是Fuzzy Logic?</h3><p>人們描述事物可以用上相當豐富的詞匯，例如這杯水有點熱、相當熱、十分熱。然而電腦卻不能理解這些含糊不清的形容詞，不知道熱是該如何定義的，相當熱到底是有多熱，所以任何輸入到電腦的資訊都必需經過量化。於是人們便開始使用<strong>標準邏輯</strong> (非黑即白，1或0，是或非)來形容事物以方便電腦理解，例如定義 40°C 以上為熱。那麼問題又來了，電腦把所有 40°C 以上的東西都定義為熱，那 39°C 的東西呢？難道 39°C 就不算熱嗎？因此，模糊邏輯便被用來解決這個問題了。</p>
+<p>模糊邏輯使用了<strong>真實度 (Degree of truth)</strong> 取代標準邏輯中的非 1 即 0，以表示含糊不清的部分。如下圖顯示，我們可以形容一杯 40°C 的水為 0.9 熱、43°C 或以上的為 1 熱、35°C 或以下的為 0 熱。</p>
+<p><img src="/2021/02/15/fuzzy-stock/fuzzy_logic_vs_trad_logic.png" alt="標準邏輯 VS 模糊邏輯" title="標準邏輯 VS 模糊邏輯"></p>
+<p>因此，在模糊邏輯中，「熱」不是單指某個數值，而是一個集合 (由 0 至 1 的所有數值) 。需要注意的是真實度不等於概率，真實度是用來形容事物的<strong>不確定性 (Uncertainty)</strong> 而不是<strong>可能性 (Probability)</strong> 。</p>
+<p>自此，模糊邏輯讓電腦也可以理解人類那博大精深的語意陳述。</p>
+<h3 id="什麼是Membership-Function"><a href="#什麼是Membership-Function" class="headerlink" title="什麼是Membership Function?"></a>什麼是Membership Function?</h3><p><strong>歸屬函數 (Membership Function)</strong> 其實就是一個把輸入值映射成真實度的函數。如上圖的就是兩個歸屬函數, 在右邊的函數中，輸入 40 得 0.9，輸入 30得 0。</p>
+<p>常見的歸屬函數有下圖幾種。(<a target="_blank" rel="noopener" href="http://daad.wb.tu-harburg.de/?id=505">http://daad.wb.tu-harburg.de/?id=505</a>)<br><img src="/2021/02/15/fuzzy-stock/membership_func.jpg" alt="歸屬函數" title="歸屬函數"></p>
+<h3 id="什麼是Rule"><a href="#什麼是Rule" class="headerlink" title="什麼是Rule?"></a>什麼是Rule?</h3><p>IF/THEN <strong>規則 (Rule)</strong> 用作制定條件語句。若輸入的數值符合條件，相對應的 Rule 便會被觸發，藉此計算出不同的輸出數值。Rule 需要預先定義好，一般而言，越復雜的系統，Rule 就越多。</p>
+<p>以下 Rule 的例子取自<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Fuzzy_logic">Wikipedia</a>:</p>
+<blockquote>
+<p>IF 溫度 IS 非常冷 THEN 停止風扇<br>IF 溫度 IS 冷 THEN 減速風扇<br>IF 溫度 IS 正常 THEN 保持現有水平<br>IF 溫度 IS 熱 THEN 加速風扇</p>
+</blockquote>
+<p>非常冷、冷、正常、熱各自都有相對應的 Membership Function。若輸入溫度在他們的 Membership Function 中映射出的真實度不為0，則該 Rule 會被觸發。可想而知，一個輸入是有機會觸發多條 Rule 的，這完全取決於用戶是如何定義 Membership Function。例如 26°C 為 0.8 正常，0.3 熱，則第 2、3 條 Rule 會同時被觸發。至於後面是如何做<strong>解模糊 (Defuzzification)</strong> 計算輸出值，這裡便不作詳述。日後有機會，我會另外再寫一篇文章介紹的。</p>
+<h3 id="實現"><a href="#實現" class="headerlink" title="實現"></a>實現</h3><p>股票預測系統的思路和編寫是參考自以下文章，是一篇14年的論文。</p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.researchgate.net/publication/271337881_A_Predictive_Stock_Market_Technical_Analysis_Using_Fuzzy_Logic">Ijegwa, A.D., Rebecca, V.O., Olusegun, F., Isaac, O.O.: A predictive stock market technical analysis using fuzzy logic. Comput. Inf. Sci. 7(3), 1 (2014)</a></p>
+</blockquote>
+<h4 id="STEP-1-安裝相關lib"><a href="#STEP-1-安裝相關lib" class="headerlink" title="STEP 1: 安裝相關lib"></a>STEP 1: 安裝相關lib</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install scikit-fuzzy numpy alpha_vantage</span><br></pre></td></tr></table></figure>
+
+<p>scikit-fuzzy 是用來製作模糊控制的lib，alpha_vantage 是用作找取股票數據的lib，而 numpy 相信大家也不陌生。</p>
+<p>沒有安裝 python3 的可以先到<a target="_blank" rel="noopener" href="https://www.python.org/download/releases/3.0/">官網</a>下載。</p>
+<h4 id="STEP-2-決定需要用到的技術指標"><a href="#STEP-2-決定需要用到的技術指標" class="headerlink" title="STEP 2: 決定需要用到的技術指標"></a>STEP 2: 決定需要用到的技術指標</h4><p>我採納了論文中使用到的4個 Indicator，分別是:</p>
+<ol>
+<li>指數平滑異同移動平均線 Moving Average Convergence Divergence (MACD)</li>
+<li>相對強弱指數 Relative Strength Index (RSI)</li>
+<li>隨機震盪指標 Stochastic Oscillator (SO)</li>
+<li>能量潮指標 On Balance Volume (OBV)。</li>
+</ol>
+<p>各個技術指標的算法和意義在下方連結有詳細解釋 ，這裡便不作說明了。<br><a target="_blank" rel="noopener" href="https://www.taindicators.com/">https://www.taindicators.com/</a></p>
+<h4 id="STEP-3-定義-Membership-Function"><a href="#STEP-3-定義-Membership-Function" class="headerlink" title="STEP 3: 定義 Membership Function"></a>STEP 3: 定義 Membership Function</h4><table>
+<thead>
+<tr>
+<th>輸入</th>
+<th>Low</th>
+<th>Medium</th>
+<th>High</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>MACD</td>
+<td>0-0-1</td>
+<td>-</td>
+<td>0-1-1</td>
+</tr>
+<tr>
+<td>RSI</td>
+<td>0-0-30</td>
+<td>30-50-70</td>
+<td>70-100-100</td>
+</tr>
+<tr>
+<td>SO</td>
+<td>0-0-20</td>
+<td>20-50-80</td>
+<td>80-100-100</td>
+</tr>
+<tr>
+<td>OBV</td>
+<td>0-0-1</td>
+<td>-</td>
+<td>0-1-1</td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>輸出</th>
+<th>Sell</th>
+<th>Hold</th>
+<th>Buy</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>REC</td>
+<td>0-0-10</td>
+<td>10-15-20</td>
+<td>20-30-30</td>
+</tr>
+</tbody></table>
+<p>解讀：<br>以 RSI 為例，這個變量有 3 個值，分別是 Low，Medium，High。每個值都有自己的 Membership Function。當中 Medium 30-50-70 指其輸入範圍是30至70，輸入值越接近 50 ，返回的真實度越高，最高為 1。輸入範圍外的值則得 0。</p>
+<h4 id="STEP-4-定義-Rule-Membership-Function"><a href="#STEP-4-定義-Rule-Membership-Function" class="headerlink" title="STEP 4: 定義 Rule Membership Function"></a>STEP 4: 定義 Rule Membership Function</h4><p>沿用論文所定下的Rule，一共9條。</p>
+<blockquote>
+<ol>
+<li>IF MACD is HIGH and RSI is LOW and SO is LOW and OBV is HIGH THEN BUY</li>
+<li>IF MACD is LOW and RSI is HIGH and SO is HIGH and OBV is LOW THEN BUY</li>
+<li>IF MACD is HIGH and RSI is MED and SO is MED and OBV is HIGH THEN BUY</li>
+<li>IF MACD is LOW and RSI is MED and SO is HIGH and OBV is LOW THEN SELL</li>
+<li>IF RSI is LOW and SO is LOW and OBV is HIGH THEN BUY</li>
+<li>IF RSI is HIGH and SO is HIGH and OBV is LOW THEN SELL</li>
+<li>IF MACD is LOW and RSI is HIGH and SO is HIGH THEN SELL</li>
+<li>IF MACD is LOW and RSI is MED and SO is MED THEN HOLD</li>
+<li>IF MACD is HIGH and RSI is MED and SO is MED and OBV is LOW THEN HOLD</li>
+</ol>
+</blockquote>
+<h4 id="STEP-5-編程"><a href="#STEP-5-編程" class="headerlink" title="STEP 5: 編程"></a>STEP 5: 編程</h4><p>請詳見 <a target="_blank" rel="noopener" href="https://github.com/cwingho/fuzzy-stock.git">GitHub</a>。<br>我是透過 Alpha Vantage 提供的 API 找取股票數據的。主要原因是其可以提供不同技術指標的查詢服務，節省開發時間。加上使用網友開發的訪問 Alpha Vantage API 的模組，可以更進一步提高開發效率。使用 API 需要 API Key，可以到<a target="_blank" rel="noopener" href="https://www.alphavantage.co/support/#api-key">官網</a>申請。因為使用的是免費計劃，所以會有用額限制。平台會紀錄請求的 IP 地址，所有申請多個 API Key 是不會提升用額的。</p>
+<hr>
+<p>到此，基本上編程就完成了。通過下面 command 可以執行程式。 ARKK 可以換成其他美股代碼。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 main.py ARKK</span><br></pre></td></tr></table></figure>
+
+<p>輸出結果:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Recommended to buy ARKK</span><br></pre></td></tr></table></figure>
+<p>目前 AI 會推薦買入契媽的 ETF。</p>
+<p>這預測系統的核心思想就是在觀察到股票超賣時就買入，超買時就賣入，其餘時間則持有股票，從而達到獲利效果。據論文中的討論，模型是可以獲利的，不過文中並沒有詳細列出實驗數據。</p>
+<p>這程式其實還有很多地方有待改善的，例如可以建立 Database 存儲股票數據，減少每次訪問 API 的時間。大家也可以自行修改並加入更多的 Technical Indicator， Rule，股票參數和 Membership Function 以改善模型表現。</p>
+<p>本文只提供了一種可以透過 Fuzzy logic 來預測股市的方法和思路，對任何利用此程式所引致的後果，概不負責。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>博主： </strong>Brian Chan
+  </li>
+  <li class="post-copyright-link">
+      <strong>文章連結：</strong>
+      <a href="http://example.com/2021/02/15/fuzzy-stock/" title="使用 Python 編寫基於模糊邏輯的AI股票預測系統">http://example.com/2021/02/15/fuzzy-stock/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版權聲明： </strong>本網誌所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 許可協議。轉載請註明出處！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+              <a href="/tags/AI/" rel="tag"><i class="fa fa-tag"></i> AI</a>
+              <a href="/tags/Stock/" rel="tag"><i class="fa fa-tag"></i> Stock</a>
+              <a href="/tags/Fuzzy-Logic/" rel="tag"><i class="fa fa-tag"></i> Fuzzy Logic</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/02/15/image-style-transfer/" rel="next" title="只要有心 人人都可以係畫家">
+                  只要有心 人人都可以係畫家 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2021 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Brian Chan</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站點總字數">62k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站點閱讀時長">56 分鍾</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="訪客總數">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="總瀏覽次數">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 強力驅動
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js" integrity="sha256-j+yj56cdEY2CwkVtGyz18fNybFGpMGJ8JxG3GSyO2+I=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"http://example.com/2021/02/15/fuzzy-stock/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"botnotes","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+<script type="text/javascript" size="300" alpha='0.6' zIndex="-1" src="/js/ribbon.js"></script>
+</body>
+</html>

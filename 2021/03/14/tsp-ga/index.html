@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.svg">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"我們無法找到任何有關 ${query} 的搜索結果","hits_time":"${hits} 結果在 ${time} 毫秒找到","hits":"找到 ${hits} 個結果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="旅行商問題（Traveling Salesman Problem）是個經典的 NP 難題。 它要求給定一系列的城市，旅行商需要找到一條最短或最低成本的路徑，前提是每個城市只能訪問一次，且旅行商最後需要返回到起始城市。 基因演算法 (Genetic Algorithm) 透過模擬生物進化的過程 (物競天擇 適者生存)，對一群候選的答案不斷進行迭代模擬進化，過程包括自然選擇 (Selection)、雜">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用基因算法(GA)解決旅行商問題(TSP)">
+<meta property="og:url" content="http://example.com/2021/03/14/tsp-ga/index.html">
+<meta property="og:site_name" content="Brian Chan 筆記">
+<meta property="og:description" content="旅行商問題（Traveling Salesman Problem）是個經典的 NP 難題。 它要求給定一系列的城市，旅行商需要找到一條最短或最低成本的路徑，前提是每個城市只能訪問一次，且旅行商最後需要返回到起始城市。 基因演算法 (Genetic Algorithm) 透過模擬生物進化的過程 (物競天擇 適者生存)，對一群候選的答案不斷進行迭代模擬進化，過程包括自然選擇 (Selection)、雜">
+<meta property="og:locale" content="zh_HK">
+<meta property="og:image" content="http://example.com/2021/03/14/tsp-ga/example_1.png">
+<meta property="og:image" content="http://example.com/2021/03/14/tsp-ga/example_1.png">
+<meta property="og:image" content="http://example.com/2021/03/14/tsp-ga/example_2.png">
+<meta property="og:image" content="http://example.com/2021/03/14/tsp-ga/cities.png">
+<meta property="og:image" content="http://example.com/2021/03/14/tsp-ga/cost_result.png">
+<meta property="og:image" content="http://example.com/2021/03/14/tsp-ga/path_result.png">
+<meta property="article:published_time" content="2021-03-14T09:00:25.000Z">
+<meta property="article:modified_time" content="2022-02-02T07:30:25.044Z">
+<meta property="article:author" content="Brian Chan">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="GA">
+<meta property="article:tag" content="TSP">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/2021/03/14/tsp-ga/example_1.png">
+
+
+<link rel="canonical" href="http://example.com/2021/03/14/tsp-ga/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-HK","comments":true,"permalink":"http://example.com/2021/03/14/tsp-ga/","path":"2021/03/14/tsp-ga/","title":"使用基因算法(GA)解決旅行商問題(TSP)"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>使用基因算法(GA)解決旅行商問題(TSP) | Brian Chan 筆記</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M67MDLE8LV"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-M67MDLE8LV","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+<!-- <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script> -->
+
+<script data-ad-client="ca-pub-2899165372844878" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2899165372844878"
+     crossorigin="anonymous"></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切換導航欄" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Brian Chan 筆記</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">科技｜技術｜教學｜原創</p>
+      <img class="custom-logo-image" src="/images/logo.svg" alt="Brian Chan 筆記">
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首頁</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>標籤<span class="badge">41</span></a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分類<span class="badge">5</span></a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>歸檔<span class="badge">24</span></a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-coffee fa-fw"></i>關於</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>檢索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目錄
+        </li>
+        <li class="sidebar-nav-overview">
+          本站概覽
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%AE%E7%9A%84"><span class="nav-number">1.</span> <span class="nav-text">目的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E8%AA%AA"><span class="nav-number">2.</span> <span class="nav-text">解說</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#GA-%E7%B5%90%E6%A7%8B"><span class="nav-number">2.1.</span> <span class="nav-text">GA 結構</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%81%A9%E6%87%89%E5%BA%A6-Fitness"><span class="nav-number">2.2.</span> <span class="nav-text">適應度 (Fitness)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%87%AA%E7%84%B6%E9%81%B8%E6%93%87-Selection"><span class="nav-number">2.3.</span> <span class="nav-text">自然選擇 (Selection)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E9%9B%9C%E4%BA%A4-Crossover"><span class="nav-number">2.4.</span> <span class="nav-text">雜交 (Crossover)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AA%81%E8%AE%8A-Mutation"><span class="nav-number">2.5.</span> <span class="nav-text">突變 (Mutation)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%B2%BE%E8%8B%B1%E9%81%B8%E6%93%87-Elitist-selection"><span class="nav-number">2.6.</span> <span class="nav-text">精英選擇 (Elitist selection)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Python-%E5%AF%A6%E7%8F%BE"><span class="nav-number">3.</span> <span class="nav-text">Python 實現</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%A6%E9%A9%97%E7%B5%90%E6%9E%9C"><span class="nav-number">4.</span> <span class="nav-text">實驗結果</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Brian Chan</p>
+  <div class="site-description" itemprop="description">Stay Hungry Stay Foolish</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">文章</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分類</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">標籤</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/cwingho" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;cwingho" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chanwingho94@gmail.com" title="E-Mail → mailto:chanwingho94@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license site-overview-item animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="回到頂部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-HK">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/14/tsp-ga/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Brian Chan">
+      <meta itemprop="description" content="Stay Hungry Stay Foolish">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Brian Chan 筆記">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用基因算法(GA)解決旅行商問題(TSP)
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">發表於</span>
+
+      <time title="創建時間：2021-03-14 17:00:25" itemprop="dateCreated datePublished" datetime="2021-03-14T17:00:25+08:00">2021-03-14</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新於</span>
+        <time title="修改時間：2022-02-02 15:30:25" itemprop="dateModified" datetime="2022-02-02T15:30:25+08:00">2022-02-02</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分類於</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%95%99%E5%AD%B8/" itemprop="url" rel="index"><span itemprop="name">教學</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="閱讀次數" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀次數：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2021/03/14/tsp-ga/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2021/03/14/tsp-ga/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字數">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字數：</span>
+      <span>6.5k</span>
+    </span>
+    <span class="post-meta-item" title="閱讀時長">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀時長 &asymp;</span>
+      <span>6 分鍾</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>旅行商問題（Traveling Salesman Problem）是個經典的 NP 難題。 它要求給定一系列的城市，旅行商需要找到一條最短或最低成本的路徑，前提是每個城市只能訪問一次，且旅行商最後需要返回到起始城市。</p>
+<p>基因演算法 (Genetic Algorithm) 透過模擬生物進化的過程 (物競天擇 適者生存)，對一群候選的答案不斷進行迭代模擬進化，過程包括自然選擇 (Selection)、雜交 (Crossover)、突變 (Mutation)等，從而進化出更好更強的答案，值到迭代結束或再也無法進代出更好的答案為止。</p>
+<a id="more"></a>
+
+<h3 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h3><p>利用 GA 對 TSP 找出最佳路徑。</p>
+<h3 id="解說"><a href="#解說" class="headerlink" title="解說"></a>解說</h3><h4 id="GA-結構"><a href="#GA-結構" class="headerlink" title="GA 結構"></a>GA 結構</h4><p><img src="/2021/03/14/tsp-ga/example_1.png" alt="Crossover 例子" title="Crossover 例子"><br>我們會稱一群候選的答案為 Population。Population 中包含多個 Chromosome (染色體)，每個染色體都由 Fitness Function 和 Individual 組成，Individual 中的每個元素則稱為 Gene (基因)。</p>
+<p>在初始化時，對於 TSP 而言，每一個 Individual 都是一個有可能的答案，裡面的每個基因都代表著一個城市，染色體各自都包含了一條由起始城市開始，穿越各含城市，最後回到起始城市的路徑，但並不能保證是最佳的案答，因為還沒經過任何進化。</p>
+<p>為方便易明，我們這裡簡化一下，把 Chromosome 和 Individual 都統稱為 Individual，每個 Individual 都代表著一個可能的答案。</p>
+<h4 id="適應度-Fitness"><a href="#適應度-Fitness" class="headerlink" title="適應度 (Fitness)"></a>適應度 (Fitness)</h4><p>我們對每個 Individual 都會為其計算一個適應度，適應度由 Fitness Function 計算，一般範圍在 0-1 之間。適應度越高則代表該 Individual 越強，越能適應環境，越有機會生存下去。而這種強大的 Individuals 所雜交生出來的後代 (一個新的答案)也越有機會也是強大的，反之亦然。當然，也有兩個弱小的 Individuals 雜交生出了強大後代的可能性。</p>
+<p>有時候，我們不會用適應度，而是用成本 (Cost) 來量度 Individual。成本與適應度剛剛相反，成本越低則代示個體越強大。我們可以理解成：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">成本 &#x3D; 1 - 適應度</span><br></pre></td></tr></table></figure>
+<p>是使用 Fitness 還是 Cost 還是兩個一起用，並沒有硬規定，這完全取決於工程師如何設計模型。</p>
+<h4 id="自然選擇-Selection"><a href="#自然選擇-Selection" class="headerlink" title="自然選擇 (Selection)"></a>自然選擇 (Selection)</h4><p>我們需要在 Population 中選擇 Individuals 用來繁衍後代，這裡便會用到適應度，適應度越高則被選出來的機會越大。這很合理，在汰弱留強的環境下，只有高適應度的個體才會生存下來並繁衍後代，弱者沒有人權(笑)。</p>
+<h4 id="雜交-Crossover"><a href="#雜交-Crossover" class="headerlink" title="雜交 (Crossover)"></a>雜交 (Crossover)</h4><p>我們根據個體的 Fitness 抽出一對 Individuals, 並互相交換各自的部分基因。在 TSP 中，這些基因便是路徑中城市，從左至右基因代表的城市，就是旅行商訪問城市的順序。透過互相交換城市，改變訪問城市的次序，從而得到一條新的路徑。下面是例子：</p>
+<p><img src="/2021/03/14/tsp-ga/example_1.png" alt="Crossover 例子" title="Crossover 例子"><br>我們取出一對個體，分別是 Male 和 Female，我們決定保留部分的基因，分別是城市1和3，起始城市0不變，其餘城市進行雜交。最後我們便得到了兩條新的路徑。這兩個新的答案可以當成新的個體(後代)加入到 Population 中；或取代 Population 中一些比較弱的個體；也可以直接在 Male 和 Female 上交換基因，不產生新的個體。每一種做法都可以生成出不錯的結果。工程師可以按自己的喜好或是結果的好壞來設計 Crossover 的流程。</p>
+<h4 id="突變-Mutation"><a href="#突變-Mutation" class="headerlink" title="突變 (Mutation)"></a>突變 (Mutation)</h4><p>單靠 Crossover 是不能保證會得到最佳的答案，而且有機會會使 Population 偏向單一化，也就是族群中的每個個體的基因都十分相似 (可以理解成每個個體的祖先都是某同一個強大的個體，所以大家的基因都很像)，每個的答案都差不多，缺乏基因多樣性 (Genetic Diversity)，最終陷入了 Local Minima。為此，我們每個個體都有機會進行突變，從而產生出無法透過雜交得出的答案。下面是例子：</p>
+<p><img src="/2021/03/14/tsp-ga/example_2.png" alt="Mutation 例子" title="Mutation 例子"><br>每個個體都有機會突變，突變可以是自身隨機 2 個基因的位置對掉。在 TSP 中，突變可以是同一染色體中的多個基因位置對掉，如上圖的例子就是城市2和城市5得順序對掉了。</p>
+<h4 id="精英選擇-Elitist-selection"><a href="#精英選擇-Elitist-selection" class="headerlink" title="精英選擇 (Elitist selection)"></a>精英選擇 (Elitist selection)</h4><p>直接讓部分最好的個體生存到下一世代或取代下一世代最弱的部分個體，可以確保算法得到的答案不會越變越差，下一世代的最好的個體起碼也有上一世代的最好個體這麼強。</p>
+<h3 id="Python-實現"><a href="#Python-實現" class="headerlink" title="Python 實現"></a>Python 實現</h3><figure class="highlight python"><figcaption><span>ga.py</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> math</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">GA</span>():</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self,  cities, start_city=<span class="number">0</span>, </span></span></span><br><span class="line"><span class="function"><span class="params">                        population_size=<span class="number">10</span>, </span></span></span><br><span class="line"><span class="function"><span class="params">                        crossover_rate=<span class="number">0.8</span>, </span></span></span><br><span class="line"><span class="function"><span class="params">                        mutation_rate=<span class="number">0.1</span>, </span></span></span><br><span class="line"><span class="function"><span class="params">                        elite_rate=<span class="number">0.1</span>,</span></span></span><br><span class="line"><span class="function"><span class="params">                        seed=<span class="number">0</span></span>):</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 設定 seed 方便重做實驗結果</span></span><br><span class="line">        np.random.seed(seed)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 輸入城市, 一個 2D array, 記錄了每個城市的 x,y 座標</span></span><br><span class="line">        self.cities = np.asarray(cities)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Population 大小, 也就是 Individual 的數量</span></span><br><span class="line">        self.pop_size = population_size</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Individuals 發生雜交的機率</span></span><br><span class="line">        self.co_rate = crossover_rate</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Individuals 發生突變的機率</span></span><br><span class="line">        self.mut_rate = mutation_rate</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 定義保留多少個最強的 Individuals 生存至下一世代</span></span><br><span class="line">        self.elite_rate = elite_rate</span><br><span class="line">        self.n_elite = math.floor(self.pop_size*self.elite_rate)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 設定起始城市</span></span><br><span class="line">        self.start = start_city</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 定義每個 Chromosome 有多少個 Gene, 也就是多少個城市</span></span><br><span class="line">        self.dna_size = <span class="built_in">len</span>(cities)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 預計算每個城市之間的距離, 方便計算 Cost</span></span><br><span class="line">        <span class="comment"># to save computation</span></span><br><span class="line">        self.dist = self.computeDist(self.dna_size)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 初始化候選答案</span></span><br><span class="line">        self.pop = self.initPop(self.pop_size, self.dna_size, self.start)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 計算每個候選答案的成本</span></span><br><span class="line">        <span class="comment"># 我們這裡用了 cost 而不是 fitness 因為我喜歡</span></span><br><span class="line">        self.cost = self.computeCost()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">initPop</span>(<span class="params">self, pop_size, dna_size, start_city</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        初始化 Population</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        pop = np.zeros((pop_size,dna_size), dtype=<span class="built_in">int</span>)</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(pop_size):</span><br><span class="line">            pop[i] = np.arange(dna_size)</span><br><span class="line">            np.random.shuffle(pop[i])</span><br><span class="line"></span><br><span class="line">            <span class="comment"># 確保第一個基因是起始城市</span></span><br><span class="line">            <span class="keyword">if</span> pop[i][<span class="number">0</span>] != start_city:</span><br><span class="line">                pop[i][pop[i] == start_city] = pop[i][<span class="number">0</span>]</span><br><span class="line">                pop[i][<span class="number">0</span>] = start_city</span><br><span class="line">        <span class="keyword">return</span> pop</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">computeDist</span>(<span class="params">self, dna_size</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        使用畢氏定理預計算每個城市之間的距離</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        dist = np.zeros((dna_size, dna_size))</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(dna_size):</span><br><span class="line">            <span class="keyword">for</span> j <span class="keyword">in</span> <span class="built_in">range</span>(i+<span class="number">1</span>, dna_size):</span><br><span class="line">                d = np.sqrt(np.square(self.cities[i][<span class="number">0</span>]-self.cities[j][<span class="number">0</span>])+</span><br><span class="line">                        np.square(self.cities[i][<span class="number">1</span>]-self.cities[j][<span class="number">1</span>]))</span><br><span class="line">                dist[i][j] = d</span><br><span class="line">                dist[j][i] = d</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> dist</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">computeCost</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        計算 Population 中每個答案的路徑成本, 成本為路徑中每對相鄰城市的距離加總</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        cost = np.zeros(self.pop_size)</span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(self.pop_size):</span><br><span class="line">            x = self.pop[i]</span><br><span class="line">            y = np.roll(self.pop[i], -<span class="number">1</span>)</span><br><span class="line">            cost[i] = np.<span class="built_in">sum</span>(self.dist[x,y])</span><br><span class="line">        <span class="keyword">return</span> cost</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">select</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        根據 Individuals 的 cost 隨機淘汰和保留一些 Individual</span></span><br><span class="line"><span class="string">        Cost 越大則越有機會被淘汰, 越小越有機會被保留</span></span><br><span class="line"><span class="string">        這樣使用 numpy 的 reciprocal() 返回 cost 的倒數作為被選中的機率</span></span><br><span class="line"><span class="string">        Cost 越小則被選中的機率則大</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        p = np.reciprocal(self.cost)</span><br><span class="line">        idx = np.random.choice(np.arange(self.pop_size),size=self.pop_size,</span><br><span class="line">                                replace=<span class="literal">True</span>,p=p/p.<span class="built_in">sum</span>())</span><br><span class="line"></span><br><span class="line">        self.saveLastGen()</span><br><span class="line">        self.pop = self.pop[idx]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">saveLastGen</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        保存上一世代的 Population 訊息</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        self.last_pop = self.pop.copy()</span><br><span class="line">        self.last_cost = self.cost.copy()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">eliteSurvive</span>(<span class="params">self</span>):</span></span><br><span class="line">    	<span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">    	elitist selection: 讓上一世代強大的個體生存下去,取代下一世代弱小的個體</span></span><br><span class="line"><span class="string">    	&#x27;&#x27;&#x27;</span></span><br><span class="line">        <span class="comment"># 找出強大的個體</span></span><br><span class="line">        elite_idx = np.argsort(self.last_cost)[:self.n_elite]</span><br><span class="line">        elite_pop = self.last_pop[elite_idx]</span><br><span class="line">        elite_cost = self.last_cost[elite_idx]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 找出弱小的個體</span></span><br><span class="line">        weak_idx = np.argsort(self.cost)[::-<span class="number">1</span>][:self.n_elite]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 取代</span></span><br><span class="line">        self.pop[weak_idx] = elite_pop</span><br><span class="line">        self.cost[weak_idx] = elite_cost</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">crossover</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        crossover: Male 和 Female 有一定的機率交換基因</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(self.pop_size):</span><br><span class="line">            male = self.pop[i]</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> np.random.rand() &lt; self.co_rate:</span><br><span class="line">                _i = np.random.randint(self.pop_size)</span><br><span class="line">                female = self.pop[_i]</span><br><span class="line"></span><br><span class="line">                pos = np.random.randint(low=<span class="number">1</span>,high=self.dna_size,size=<span class="number">2</span>)</span><br><span class="line">                head = <span class="built_in">min</span>(pos)</span><br><span class="line">                tail = <span class="built_in">max</span>(pos)</span><br><span class="line"></span><br><span class="line">                <span class="comment"># 保留部分基因</span></span><br><span class="line">                keep_dna = male[head:tail]</span><br><span class="line">                </span><br><span class="line">                <span class="comment"># 交換其餘基因</span></span><br><span class="line">                male_exchange_dna_mask = ~np.isin(male, keep_dna)</span><br><span class="line">                male_exchange_dna = male[male_exchange_dna_mask]</span><br><span class="line"></span><br><span class="line">                female_exchange_dna_mask = ~np.isin(female, keep_dna)</span><br><span class="line">                female_exchange_dna = female[female_exchange_dna_mask]</span><br><span class="line"></span><br><span class="line">                male[male_exchange_dna_mask] = female_exchange_dna</span><br><span class="line">                female[female_exchange_dna_mask] = male_exchange_dna</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">mutation</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">        mutation: 有一定的機率交換突變, 改變基因順序</span></span><br><span class="line"><span class="string">        &#x27;&#x27;&#x27;</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(self.pop_size):</span><br><span class="line">            <span class="keyword">if</span> np.random.rand() &lt; self.mut_rate:</span><br><span class="line">                pos = np.random.randint(low=<span class="number">1</span>,high=self.dna_size,size=<span class="number">2</span>)</span><br><span class="line">                temp = self.pop[i,pos[<span class="number">0</span>]]</span><br><span class="line">                self.pop[i,pos[<span class="number">0</span>]] = self.pop[i,pos[<span class="number">1</span>]]</span><br><span class="line">                self.pop[i,pos[<span class="number">1</span>]] = temp</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">updateCost</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="comment"># 更新 Population 中每個候選答案的成本</span></span><br><span class="line">        self.cost = self.computeCost()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">getBestPop</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="comment"># 返回最好的答案</span></span><br><span class="line">        idx = np.argmin(self.cost)</span><br><span class="line">        <span class="keyword">return</span> self.pop[idx], self.cost[idx]</span><br><span class="line"></span><br></pre></td></tr></table></figure> 
+
+<figure class="highlight python"><figcaption><span>main.py</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> ga <span class="keyword">import</span> GA</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span>():</span></span><br><span class="line">    <span class="comment"># 定義 10 個城市的 x,y 座標</span></span><br><span class="line">    cities = [[<span class="number">0.3642</span>,<span class="number">0.7770</span>],</span><br><span class="line">              [<span class="number">0.7185</span>,<span class="number">0.8312</span>],</span><br><span class="line">              [<span class="number">0.0986</span>,<span class="number">0.5891</span>],</span><br><span class="line">              [<span class="number">0.2954</span>,<span class="number">0.9606</span>],</span><br><span class="line">              [<span class="number">0.5951</span>,<span class="number">0.4647</span>],</span><br><span class="line">              [<span class="number">0.6697</span>,<span class="number">0.7657</span>],</span><br><span class="line">              [<span class="number">0.4353</span>,<span class="number">0.1709</span>],</span><br><span class="line">              [<span class="number">0.2131</span>,<span class="number">0.8349</span>],</span><br><span class="line">              [<span class="number">0.3479</span>,<span class="number">0.6984</span>],</span><br><span class="line">              [<span class="number">0.4516</span>,<span class="number">0.0488</span>]]</span><br><span class="line">    n_city = <span class="built_in">len</span>(cities)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 設定迭代多少次世代</span></span><br><span class="line">    n_gen = <span class="number">100</span></span><br><span class="line"></span><br><span class="line">    ga = GA(cities, time_window,</span><br><span class="line">            start_city=<span class="number">0</span>, </span><br><span class="line">            population_size=<span class="number">100</span>, </span><br><span class="line">            crossover_rate=<span class="number">0.8</span>, </span><br><span class="line">            mutation_rate=<span class="number">0.1</span>,</span><br><span class="line">            elite_rate=<span class="number">0.1</span>,</span><br><span class="line">            seed=<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> gen <span class="keyword">in</span> <span class="built_in">range</span>(n_gen):</span><br><span class="line">        ga.select()</span><br><span class="line">        ga.crossover()</span><br><span class="line">        ga.mutation()</span><br><span class="line">        ga.updateCost()</span><br><span class="line">        ga.updateFitness()</span><br><span class="line">        ga.eliteSurvive()</span><br><span class="line"></span><br><span class="line">        path, cost = ga.getBestPop()</span><br><span class="line">        print(<span class="string">&#x27;Gen:&#123;&#125; Best path:&#123;&#125; Cost:&#123;&#125; &#x27;</span>.<span class="built_in">format</span>(gen+<span class="number">1</span>, path, cost))</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></table></figure> 
+
+<h3 id="實驗結果"><a href="#實驗結果" class="headerlink" title="實驗結果"></a>實驗結果</h3><p>城市分佈：<br><img src="/2021/03/14/tsp-ga/cities.png" alt="城市分佈" title="城市分佈"></p>
+<p>訓練過程中 Cost 的變化 (數值越來越小，越小越好)：<br><img src="/2021/03/14/tsp-ga/cost_result.png" alt="Cost變化" title="Cost變化"></p>
+<p>不同起始城市的最佳路徑：<br><img src="/2021/03/14/tsp-ga/path_result.png" alt="最佳路徑" title="最佳路徑"></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>博主： </strong>Brian Chan
+  </li>
+  <li class="post-copyright-link">
+      <strong>文章連結：</strong>
+      <a href="http://example.com/2021/03/14/tsp-ga/" title="使用基因算法(GA)解決旅行商問題(TSP)">http://example.com/2021/03/14/tsp-ga/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版權聲明： </strong>本網誌所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 許可協議。轉載請註明出處！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+              <a href="/tags/GA/" rel="tag"><i class="fa fa-tag"></i> GA</a>
+              <a href="/tags/TSP/" rel="tag"><i class="fa fa-tag"></i> TSP</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/03/02/a-star-algo/" rel="prev" title="猴子也懂的 A* 搜尋算法">
+                  <i class="fa fa-chevron-left"></i> 猴子也懂的 A* 搜尋算法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/03/31/deploy-apache2-flask/" rel="next" title="部署 Apahce2 + Flask 到 Production Server">
+                  部署 Apahce2 + Flask 到 Production Server <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2021 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Brian Chan</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站點總字數">62k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站點閱讀時長">56 分鍾</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="訪客總數">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="總瀏覽次數">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 強力驅動
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js" integrity="sha256-j+yj56cdEY2CwkVtGyz18fNybFGpMGJ8JxG3GSyO2+I=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"http://example.com/2021/03/14/tsp-ga/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"botnotes","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+<script type="text/javascript" size="300" alpha='0.6' zIndex="-1" src="/js/ribbon.js"></script>
+</body>
+</html>

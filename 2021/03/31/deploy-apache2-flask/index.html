@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.svg">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"我們無法找到任何有關 ${query} 的搜索結果","hits_time":"${hits} 結果在 ${time} 毫秒找到","hits":"找到 ${hits} 個結果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="因工作需要為程序提供 Web service，故採用了 Apahce2 和 Flask 為 Python 程式提供高效穩定，用於生產的 Web 服務。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="部署 Apahce2 + Flask 到 Production Server">
+<meta property="og:url" content="http://example.com/2021/03/31/deploy-apache2-flask/index.html">
+<meta property="og:site_name" content="Brian Chan 筆記">
+<meta property="og:description" content="因工作需要為程序提供 Web service，故採用了 Apahce2 和 Flask 為 Python 程式提供高效穩定，用於生產的 Web 服務。">
+<meta property="og:locale" content="zh_HK">
+<meta property="article:published_time" content="2021-03-30T16:27:27.000Z">
+<meta property="article:modified_time" content="2022-02-02T07:30:25.016Z">
+<meta property="article:author" content="Brian Chan">
+<meta property="article:tag" content="Apache2">
+<meta property="article:tag" content="Flask">
+<meta property="article:tag" content="Python">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2021/03/31/deploy-apache2-flask/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-HK","comments":true,"permalink":"http://example.com/2021/03/31/deploy-apache2-flask/","path":"2021/03/31/deploy-apache2-flask/","title":"部署 Apahce2 + Flask 到 Production Server"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>部署 Apahce2 + Flask 到 Production Server | Brian Chan 筆記</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M67MDLE8LV"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-M67MDLE8LV","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+<!-- <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script> -->
+
+<script data-ad-client="ca-pub-2899165372844878" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2899165372844878"
+     crossorigin="anonymous"></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切換導航欄" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Brian Chan 筆記</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">科技｜技術｜教學｜原創</p>
+      <img class="custom-logo-image" src="/images/logo.svg" alt="Brian Chan 筆記">
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首頁</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>標籤<span class="badge">41</span></a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分類<span class="badge">5</span></a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>歸檔<span class="badge">24</span></a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-coffee fa-fw"></i>關於</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>檢索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目錄
+        </li>
+        <li class="sidebar-nav-overview">
+          本站概覽
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#STEP-1-%E5%AE%89%E8%A3%9D-Apache2"><span class="nav-number">1.</span> <span class="nav-text">STEP 1: 安裝 Apache2</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#STEP-2-%E5%AE%89%E8%A3%9D-Flask"><span class="nav-number">2.</span> <span class="nav-text">STEP 2: 安裝 Flask</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#STEP-3-%E5%AE%89%E8%A3%9D-mod-wsgi"><span class="nav-number">3.</span> <span class="nav-text">STEP 3: 安裝 mod_wsgi</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#STEP-4-%E8%A8%AD%E5%AE%9A-Python-%E7%A8%8B%E5%BC%8F%E5%92%8C-wsgi-%E6%96%87%E4%BB%B6"><span class="nav-number">4.</span> <span class="nav-text">STEP 4: 設定 Python 程式和 wsgi 文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#STEP-5-%E8%A8%AD%E5%AE%9A-Apache2"><span class="nav-number">5.</span> <span class="nav-text">STEP 5: 設定 Apache2</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Brian Chan</p>
+  <div class="site-description" itemprop="description">Stay Hungry Stay Foolish</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">文章</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分類</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">標籤</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/cwingho" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;cwingho" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chanwingho94@gmail.com" title="E-Mail → mailto:chanwingho94@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license site-overview-item animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="回到頂部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-HK">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/03/31/deploy-apache2-flask/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Brian Chan">
+      <meta itemprop="description" content="Stay Hungry Stay Foolish">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Brian Chan 筆記">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          部署 Apahce2 + Flask 到 Production Server
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">發表於</span>
+
+      <time title="創建時間：2021-03-31 00:27:27" itemprop="dateCreated datePublished" datetime="2021-03-31T00:27:27+08:00">2021-03-31</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新於</span>
+        <time title="修改時間：2022-02-02 15:30:25" itemprop="dateModified" datetime="2022-02-02T15:30:25+08:00">2022-02-02</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分類於</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%95%99%E5%AD%B8/" itemprop="url" rel="index"><span itemprop="name">教學</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="閱讀次數" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀次數：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2021/03/31/deploy-apache2-flask/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2021/03/31/deploy-apache2-flask/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字數">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字數：</span>
+      <span>2.6k</span>
+    </span>
+    <span class="post-meta-item" title="閱讀時長">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀時長 &asymp;</span>
+      <span>2 分鍾</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>因工作需要為程序提供 Web service，故採用了 Apahce2 和 Flask 為 Python 程式提供高效穩定，用於生產的 Web 服務。</p>
+<a id="more"></a>
+<p>教學適用於一般 Linux 系統。</p>
+<h3 id="STEP-1-安裝-Apache2"><a href="#STEP-1-安裝-Apache2" class="headerlink" title="STEP 1: 安裝 Apache2"></a>STEP 1: 安裝 Apache2</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo apt update</span><br><span class="line">sudo apt install apache2</span><br><span class="line">sudo apt-get install -y apache2-dev</span><br></pre></td></tr></table></figure>
+
+<h3 id="STEP-2-安裝-Flask"><a href="#STEP-2-安裝-Flask" class="headerlink" title="STEP 2: 安裝 Flask"></a>STEP 2: 安裝 Flask</h3><p>部分系統可能已預先安裝了 Python3，使用下面指令檢查。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">python3 -V</span><br></pre></td></tr></table></figure>
+
+<p>如沒則先安裝 Python3，再安裝 Flask。這裡安裝的是 Python3.6。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install python3.6</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo pip3 install flask</span><br></pre></td></tr></table></figure>
+
+<h3 id="STEP-3-安裝-mod-wsgi"><a href="#STEP-3-安裝-mod-wsgi" class="headerlink" title="STEP 3: 安裝 mod_wsgi"></a>STEP 3: 安裝 mod_wsgi</h3><p>需要使用 mod_wsgi 套件作為中介軟件連接 Apahce2(伺服器) 和 Python(應用程式)。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo pip3 install mod_wsgi</span><br></pre></td></tr></table></figure>
+
+<h3 id="STEP-4-設定-Python-程式和-wsgi-文件"><a href="#STEP-4-設定-Python-程式和-wsgi-文件" class="headerlink" title="STEP 4: 設定 Python 程式和 wsgi 文件"></a>STEP 4: 設定 Python 程式和 wsgi 文件</h3><p>這裡是重中之重，我們簡單建立一個測試程式 app.py：</p>
+<figure class="highlight python"><figcaption><span>app.py</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/local/bin/python3</span></span><br><span class="line"><span class="comment"># -*- encoding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">from</span> flask <span class="keyword">import</span> Flask</span><br><span class="line"></span><br><span class="line"><span class="comment"># init</span></span><br><span class="line">app = Flask(__name__)</span><br><span class="line"></span><br><span class="line"><span class="comment"># routing</span></span><br><span class="line"><span class="meta">@app.route(<span class="params"><span class="string">&#x27;/&#x27;</span></span>)</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">index</span>():</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;hello world&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    app.run()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>在同一目錄建立 flaskapp.wsgi</p>
+<figure class="highlight python"><figcaption><span>flaskapp.wsgi</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/local/bin/python3</span></span><br><span class="line"><span class="comment"># -*- encoding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> sys, os</span><br><span class="line">sys.path.insert(<span class="number">0</span>, os.path.dirname(__file__))</span><br><span class="line"><span class="keyword">from</span> app <span class="keyword">import</span> app</span><br><span class="line">application = app</span><br></pre></td></tr></table></figure>
+
+<h3 id="STEP-5-設定-Apache2"><a href="#STEP-5-設定-Apache2" class="headerlink" title="STEP 5: 設定 Apache2"></a>STEP 5: 設定 Apache2</h3><p>輸入指令 <code>mod_wsgi-express module-config</code> 會得到下面類似的東西：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">LoadModule wsgi_module &quot;&#x2F;usr&#x2F;local&#x2F;lib&#x2F;python3.6&#x2F;dist-packages&#x2F;mod_wsgi&#x2F;server&#x2F;mod_wsgi-py36.cpython-36m-x86_64-linux-gnu.so&quot;</span><br><span class="line">WSGIPythonHome &quot;&#x2F;usr&quot;</span><br></pre></td></tr></table></figure>
+<p>在 /etc/apache2/mods-available 建立 <code>wsgi.load</code>，複製貼上上面內容。</p>
+<figure class="highlight plain"><figcaption><span>/etc/apache2/mods-available/wsgi.load</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">LoadModule wsgi_module &quot;&#x2F;usr&#x2F;local&#x2F;lib&#x2F;python3.6&#x2F;dist-packages&#x2F;mod_wsgi&#x2F;server&#x2F;mod_wsgi-py36.cpython-36m-x86_64-linux-gnu.so&quot;</span><br><span class="line">WSGIPythonHome &quot;&#x2F;usr&quot;</span><br></pre></td></tr></table></figure>
+<p>這裡目的是讓 Apache2 啓用 wsgi 模組。</p>
+<p>在 /etc/apache2/sites-available 建立 <code>botnotes.conf</code> 並複製貼上內容。這裡的每個設定都是有意義的，具體作用可以參考<a target="_blank" rel="noopener" href="https://modwsgi.readthedocs.io/en/master/">官網</a>。 這裡是用來定義Python 程式使用 Apache2 的一些參數。</p>
+<figure class="highlight plain"><figcaption><span>/etc/apache2/sites-available/botnotes.conf</span></figcaption><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">&lt;virtualhost *:80&gt;</span><br><span class="line">    # xx.xx.xx.xx 為你的IP</span><br><span class="line">    ServerName xx.xx.xx.xx</span><br><span class="line"></span><br><span class="line">    # process group name 設定為 botnotes。每一個 flask application 都應該要有自己的 .conf 文件和 process group name。</span><br><span class="line">    WSGIDaemonProcess botnotes processes&#x3D;1 threads&#x3D;10 display-name&#x3D;%&#123;GROUP&#125; home&#x3D;&#x2F;home</span><br><span class="line">    WSGIProcessGroup botnotes</span><br><span class="line"></span><br><span class="line">    # app.py 和 flaskapp.wsgi 放在 &#x2F;home 目錄下</span><br><span class="line">    # apache 會執行 flaskapp.wsgi, 而 flaskapp.wsgi 包含了 app.py</span><br><span class="line">    WSGIScriptAlias &#x2F; &#x2F;home&#x2F;flaskapp.wsgi</span><br><span class="line">    WSGIScriptReloading Off</span><br><span class="line">    WSGIApplicationGroup %&#123;GLOBAL&#125;</span><br><span class="line"></span><br><span class="line">    # 修改目錄存取權取</span><br><span class="line">    &lt;directory &#x2F;home&#x2F;&gt;</span><br><span class="line">        Options FollowSymLinks</span><br><span class="line">        AllowOverride None</span><br><span class="line">        Order deny,allow</span><br><span class="line">        Require all granted</span><br><span class="line">    &lt;&#x2F;directory&gt;</span><br><span class="line"></span><br><span class="line">    # 可以在 &#x2F;var&#x2F;log&#x2F;apache2&#x2F;error.log 查看 app.py 的輸出</span><br><span class="line">    ErrorLog $&#123;APACHE_LOG_DIR&#125;&#x2F;error.log</span><br><span class="line">    LogLevel warn</span><br><span class="line">    CustomLog $&#123;APACHE_LOG_DIR&#125;&#x2F;access.log combined</span><br><span class="line">&lt;&#x2F;virtualhost&gt;</span><br></pre></td></tr></table></figure>
+
+<p>Enable 模組和設定，然後重啟。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo a2enmod wsgi</span><br><span class="line">sudo a2ensite botnotes</span><br><span class="line">sudo service apache2 restart</span><br></pre></td></tr></table></figure>
+
+<p>最後訪問 Server IP 就會看見 hello world 訊息。完。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>博主： </strong>Brian Chan
+  </li>
+  <li class="post-copyright-link">
+      <strong>文章連結：</strong>
+      <a href="http://example.com/2021/03/31/deploy-apache2-flask/" title="部署 Apahce2 + Flask 到 Production Server">http://example.com/2021/03/31/deploy-apache2-flask/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版權聲明： </strong>本網誌所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 許可協議。轉載請註明出處！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Apache2/" rel="tag"><i class="fa fa-tag"></i> Apache2</a>
+              <a href="/tags/Flask/" rel="tag"><i class="fa fa-tag"></i> Flask</a>
+              <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/03/14/tsp-ga/" rel="prev" title="使用基因算法(GA)解決旅行商問題(TSP)">
+                  <i class="fa fa-chevron-left"></i> 使用基因算法(GA)解決旅行商問題(TSP)
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/04/01/systemctl-service/" rel="next" title="systemctl 與 service 的分別">
+                  systemctl 與 service 的分別 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2021 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Brian Chan</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站點總字數">62k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站點閱讀時長">56 分鍾</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="訪客總數">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="總瀏覽次數">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 強力驅動
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js" integrity="sha256-j+yj56cdEY2CwkVtGyz18fNybFGpMGJ8JxG3GSyO2+I=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"http://example.com/2021/03/31/deploy-apache2-flask/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"botnotes","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+<script type="text/javascript" size="300" alpha='0.6' zIndex="-1" src="/js/ribbon.js"></script>
+</body>
+</html>

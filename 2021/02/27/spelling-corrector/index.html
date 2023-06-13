@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.svg">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.svg">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"example.com","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"我們無法找到任何有關 ${query} 的搜索結果","hits_time":"${hits} 結果在 ${time} 毫秒找到","hits":"找到 ${hits} 個結果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+<meta name="description" content="使用 Python3 短短 30 行左右的代碼編寫拼寫檢查工具。淺白解說貝葉斯定理(Bayes’ theorem)。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="簡單實現基於貝葉斯定理的拼寫檢查">
+<meta property="og:url" content="http://example.com/2021/02/27/spelling-corrector/index.html">
+<meta property="og:site_name" content="Brian Chan 筆記">
+<meta property="og:description" content="使用 Python3 短短 30 行左右的代碼編寫拼寫檢查工具。淺白解說貝葉斯定理(Bayes’ theorem)。">
+<meta property="og:locale" content="zh_HK">
+<meta property="article:published_time" content="2021-02-26T16:23:46.000Z">
+<meta property="article:modified_time" content="2022-02-02T07:30:25.041Z">
+<meta property="article:author" content="Brian Chan">
+<meta property="article:tag" content="Python">
+<meta property="article:tag" content="Bayes">
+<meta property="article:tag" content="Spelling corrector">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://example.com/2021/02/27/spelling-corrector/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-HK","comments":true,"permalink":"http://example.com/2021/02/27/spelling-corrector/","path":"2021/02/27/spelling-corrector/","title":"簡單實現基於貝葉斯定理的拼寫檢查"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>簡單實現基於貝葉斯定理的拼寫檢查 | Brian Chan 筆記</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-M67MDLE8LV"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"G-M67MDLE8LV","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+<!-- <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script> -->
+
+<script data-ad-client="ca-pub-2899165372844878" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2899165372844878"
+     crossorigin="anonymous"></script>
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切換導航欄" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">Brian Chan 筆記</h1>
+      <i class="logo-line"></i>
+    </a>
+      <p class="site-subtitle" itemprop="description">科技｜技術｜教學｜原創</p>
+      <img class="custom-logo-image" src="/images/logo.svg" alt="Brian Chan 筆記">
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首頁</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>標籤<span class="badge">41</span></a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分類<span class="badge">5</span></a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>歸檔<span class="badge">24</span></a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-coffee fa-fw"></i>關於</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>檢索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目錄
+        </li>
+        <li class="sidebar-nav-overview">
+          本站概覽
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%80%E9%BA%BC%E6%98%AF%E8%B2%9D%E8%91%89%E6%96%AF%E5%AE%9A%E7%90%86-Bayes%E2%80%99-theorem"><span class="nav-number">1.</span> <span class="nav-text">什麼是貝葉斯定理(Bayes’ theorem)?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E6%8A%8A-Bayes%E2%80%99-theorem-%E6%87%89%E7%94%A8%E5%88%B0%E6%8B%BC%E5%AF%AB%E6%AA%A2%E6%9F%A5"><span class="nav-number">2.</span> <span class="nav-text">如何把 Bayes’ theorem 應用到拼寫檢查?</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AF%A6%E7%8F%BE"><span class="nav-number">3.</span> <span class="nav-text">實現</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B8%AC%E8%A9%A6"><span class="nav-number">4.</span> <span class="nav-text">測試</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Brian Chan</p>
+  <div class="site-description" itemprop="description">Stay Hungry Stay Foolish</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">24</span>
+          <span class="site-state-item-name">文章</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">分類</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">41</span>
+        <span class="site-state-item-name">標籤</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/cwingho" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;cwingho" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:chanwingho94@gmail.com" title="E-Mail → mailto:chanwingho94@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license site-overview-item animated" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" class="cc-opacity" rel="noopener" target="_blank"><img src="https://cdn.jsdelivr.net/npm/@creativecommons/vocabulary@2020.11.3/assets/license_badges/small/by_nc_sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button" aria-label="回到頂部">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-HK">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2021/02/27/spelling-corrector/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Brian Chan">
+      <meta itemprop="description" content="Stay Hungry Stay Foolish">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Brian Chan 筆記">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          簡單實現基於貝葉斯定理的拼寫檢查
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">發表於</span>
+
+      <time title="創建時間：2021-02-27 00:23:46" itemprop="dateCreated datePublished" datetime="2021-02-27T00:23:46+08:00">2021-02-27</time>
+    </span>
+      <span class="post-meta-item">
+        <span class="post-meta-item-icon">
+          <i class="far fa-calendar-check"></i>
+        </span>
+        <span class="post-meta-item-text">更新於</span>
+        <time title="修改時間：2022-02-02 15:30:25" itemprop="dateModified" datetime="2022-02-02T15:30:25+08:00">2022-02-02</time>
+      </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分類於</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E8%A1%93%E5%AF%A6%E6%88%B0/" itemprop="url" rel="index"><span itemprop="name">技術實戰</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-item" title="閱讀次數" id="busuanzi_container_page_pv">
+      <span class="post-meta-item-icon">
+        <i class="far fa-eye"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀次數：</span>
+      <span id="busuanzi_value_page_pv"></span>
+    </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2021/02/27/spelling-corrector/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2021/02/27/spelling-corrector/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字數">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字數：</span>
+      <span>7.8k</span>
+    </span>
+    <span class="post-meta-item" title="閱讀時長">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">閱讀時長 &asymp;</span>
+      <span>7 分鍾</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>使用 Python3 短短 30 行左右的代碼編寫拼寫檢查工具。淺白解說貝葉斯定理(Bayes’ theorem)。</p>
+<a id="more"></a>
+
+<p>參考文章:</p>
+<blockquote>
+<p>Peter Norvig - <a target="_blank" rel="noopener" href="https://norvig.com/spell-correct.html">How to Write a Spelling Corrector</a></p>
+</blockquote>
+<p>Peter Norvig 的代碼如下</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> collections <span class="keyword">import</span> Counter</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">words</span>(<span class="params">text</span>):</span> <span class="keyword">return</span> re.findall(<span class="string">r&#x27;\w+&#x27;</span>, text.lower())</span><br><span class="line"></span><br><span class="line">WORDS = Counter(words(<span class="built_in">open</span>(<span class="string">&#x27;big.txt&#x27;</span>).read()))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">P</span>(<span class="params">word, N=<span class="built_in">sum</span>(<span class="params">WORDS.values(<span class="params"></span>)</span>)</span>):</span> </span><br><span class="line">    <span class="string">&quot;Probability of `word`.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> WORDS[word] / N</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">correction</span>(<span class="params">word</span>):</span> </span><br><span class="line">    <span class="string">&quot;Most probable spelling correction for word.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">max</span>(candidates(word), key=P)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">candidates</span>(<span class="params">word</span>):</span> </span><br><span class="line">    <span class="string">&quot;Generate possible spelling corrections for word.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> (known([word]) <span class="keyword">or</span> known(edits1(word)) <span class="keyword">or</span> known(edits2(word)) <span class="keyword">or</span> [word])</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">known</span>(<span class="params">words</span>):</span> </span><br><span class="line">    <span class="string">&quot;The subset of `words` that appear in the dictionary of WORDS.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">set</span>(w <span class="keyword">for</span> w <span class="keyword">in</span> words <span class="keyword">if</span> w <span class="keyword">in</span> WORDS)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">edits1</span>(<span class="params">word</span>):</span></span><br><span class="line">    <span class="string">&quot;All edits that are one edit away from `word`.&quot;</span></span><br><span class="line">    letters    = <span class="string">&#x27;abcdefghijklmnopqrstuvwxyz&#x27;</span></span><br><span class="line">    splits     = [(word[:i], word[i:])    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(word) + <span class="number">1</span>)]</span><br><span class="line">    deletes    = [L + R[<span class="number">1</span>:]               <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> R]</span><br><span class="line">    transposes = [L + R[<span class="number">1</span>] + R[<span class="number">0</span>] + R[<span class="number">2</span>:] <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> <span class="built_in">len</span>(R)&gt;<span class="number">1</span>]</span><br><span class="line">    replaces   = [L + c + R[<span class="number">1</span>:]           <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> R <span class="keyword">for</span> c <span class="keyword">in</span> letters]</span><br><span class="line">    inserts    = [L + c + R               <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">for</span> c <span class="keyword">in</span> letters]</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">set</span>(deletes + transposes + replaces + inserts)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">edits2</span>(<span class="params">word</span>):</span> </span><br><span class="line">    <span class="string">&quot;All edits that are two edits away from `word`.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> (e2 <span class="keyword">for</span> e1 <span class="keyword">in</span> edits1(word) <span class="keyword">for</span> e2 <span class="keyword">in</span> edits1(e1))</span><br></pre></td></tr></table></figure>
+
+<p>使用方法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">correction(<span class="string">&#x27;speling&#x27;</span>)</span><br><span class="line"><span class="string">&#x27;spelling&#x27;</span></span><br><span class="line"></span><br><span class="line">correction(<span class="string">&#x27;korrectud&#x27;</span>)</span><br><span class="line"><span class="string">&#x27;corrected&#x27;</span></span><br></pre></td></tr></table></figure>
+
+<p>以上是 Peter Norvig 寫的版本，先拆解一下原理。</p>
+<hr>
+<h3 id="什麼是貝葉斯定理-Bayes’-theorem"><a href="#什麼是貝葉斯定理-Bayes’-theorem" class="headerlink" title="什麼是貝葉斯定理(Bayes’ theorem)?"></a>什麼是貝葉斯定理(Bayes’ theorem)?</h3><p>我們用 <code>P(A)</code> 來表示事件 A 發生的機率；<code>P(B)</code> 來表示事件 B 發生的機率；<code>P(A)P(B)</code> 來表示事件 A 和事件 B 同時發生的機率。這很容易理解。</p>
+<p>Bayes，一位18世紀英國數學家，他認為雖然A和B同時發生的機率結果永遠都是<code>P(A)P(B)</code>，但計算的過程卻未必一樣。他認為事件發生的先後次序會影響到彼此的機率，即A在B<strong>已發生</strong>的情況下發生的機率，與A在B<strong>未發生</strong>的情況下發生的機率可以是不一樣的，但最終的結果都是<code>P(A)P(B)</code>。</p>
+<p>因此，我們會用 <code>P(A|B)</code> 來表示在B已發生的情況下，A發生的機率；同理，用 <code>P(B|A)</code> 來表示在A已發生的情況下，B發生的機率。我們得出下列兩條公式：</p>
+<blockquote>
+<p>P(B) P(A|B) = P(A) P(B)<br>P(A) P(B|A) = P(A) P(B)</p>
+</blockquote>
+<p>用文字解釋就是</p>
+<blockquote>
+<p>B發生的機率 X 在B已發生的情況下A發生的機率 = A和B同時發生的機率<br>A發生的機率 X 在A已發生的情況下B發生的機率 = A和B同時發生的機率</p>
+</blockquote>
+<p>我們修改一下公式就得出：</p>
+<blockquote>
+<p>P(B) P(A|B) = P(A) P(B) = P(A) P(B|A)<br>P(B) P(A|B) = P(A) P(B|A)<br>P(A|B) = P(A) P(B|A) / P(B)</p>
+</blockquote>
+<p>最後的那條公式也就是 Bayes’ theorem 中最常看見的公式，通常是用作於<br>已得知 <code>P(A)</code>，<code>P(B)</code>，<code>P(B|A)</code>，求 <code>P(A|B)</code>。所以，Bayes’ theorem 就是描述在已知的一些情況下，事件發生的機率。</p>
+<h3 id="如何把-Bayes’-theorem-應用到拼寫檢查"><a href="#如何把-Bayes’-theorem-應用到拼寫檢查" class="headerlink" title="如何把 Bayes’ theorem 應用到拼寫檢查?"></a>如何把 Bayes’ theorem 應用到拼寫檢查?</h3><p>為方便閱讀，我們沿用 Peter Norvig 文中的符號，把 A 改成 c，B 改成 w。<br>所以，我們需要在已知<code>P(c)</code>，<code>P(w)</code>，<code>P(w|c)</code>的情況下，求<code>P(c|w)</code>。 這裡總共有4個部分。然後，我們可以用 <code>c</code> 表示用戶心中想輸入的字(也就是正確的字)，<code>w</code> 表示用戶實際輸入的字(也就是可能會打錯的字)，那麼，這4個部份的代表的就是：</p>
+<blockquote>
+<p>P(c) = 輸入的字出現的機率<br>P(w) = 實際輸入的字出現的機率<br>P(w|c) = 用戶想輸入出 c 卻意外輸入成 w 的機率<br>P(c|w) = 用戶實際輸入 w 但其實想要輸入 c 的機率</p>
+</blockquote>
+<p>而 <code>P(c|w)</code> 就是我們拼寫檢查的核心，也是想要計算出的東西。根據用戶實際輸入的字(<code>w</code>)，猜出他其實是想要輸入什麼字(<code>c</code>)。當然，這是要有個前題的，用戶輸入的字必須是有錯的且心中想輸入的字必須是正確的，不然就不用拼寫檢查了。(廢話)</p>
+<p>再來說說如何用數字來表達這4個東西。</p>
+<ul>
+<li><p>我們可以用 <code>c</code> 在英文文本中出現的頻率來表示 <code>P(c)</code>。例如取一篇10000字英文文章，當中 “apple” 這個字出現了 20 次，則 <code>P("apple")</code> = 20/1000 = 0.002。可想而知，一些經常使用的字例如 “the”，”is” 的 <code>P(c)</code> 會特別高。</p>
+</li>
+<li><p>在不知道 <code>c</code> 的情況下，用戶打出任何 <code>w</code> 都是有可能的(沒有人知道用戶要出什麼字), 所以就 <code>P(w)</code> 而言，我們可以假設 <code>P("apple")</code> = <code>P("banana")</code> = <code>P("cat")</code> = …… = <code>P("abcxyz")</code>，用戶打出任何字串的機率都是一樣的。因為，我們可以簡化公式，可以直接把 <code>P(w)=1</code>，或是刪掉都可以。</p>
+</li>
+<li><p>在已知 <code>c</code> 的情況下，我們可以用編輯距離(edit distance)來表示 <code>P(w|c)</code>。<br>編輯距離就是用來量度一個字串要多少步驟才能變成另一個字符串，當中步驟包括：</p>
+</li>
+</ul>
+<blockquote>
+<ol>
+<li>刪掉一個字符 (appl<strong>r</strong>e -&gt; apple)</li>
+<li>插入一個字符 (appe -&gt; app<strong>l</strong>e)</li>
+<li>取代一個字符 (app<strong>o</strong>e -&gt; apple)</li>
+<li>交換兩個字符 (app<strong>el</strong> -&gt; apple)</li>
+</ol>
+</blockquote>
+<p>簡單來說就是 <code>w</code> 的樣子長得越像 <code>c</code>，則 <code>P(w|c)</code> 越高。例如 <code>P("apppe"|"apple")</code> 就要比 <code>P("snjfkndf"|"apple")</code> 高。</p>
+<ul>
+<li><p>為了求 <code>P(c|w)</code>，我們對所有有可能的 <code>c</code> 計算其 <code>P(w|c) P(c)</code>，然後返回機率最高的 <code>c</code>，這就是我們的答案了。 </p>
+</li>
+<li><p>Peter Norvig 把公式寫成：<br>argmax<sub>c ∈ candidates</sub> P(c)P(w|c)<br>意思說是對所有有可能的 <code>c</code> 計算其 <code>P(w|c)P(c)</code>，然後返回機率最高的 <code>c</code>，這就是我們的答案了。argmax 指取機率最大的那個 candidates(<code>c</code>)。</p>
+</li>
+</ul>
+<h3 id="實現"><a href="#實現" class="headerlink" title="實現"></a>實現</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">edits1</span>(<span class="params">word</span>):</span></span><br><span class="line">    <span class="string">&quot;All edits that are one edit away from `word`.&quot;</span></span><br><span class="line">    letters    = <span class="string">&#x27;abcdefghijklmnopqrstuvwxyz&#x27;</span></span><br><span class="line">    splits     = [(word[:i], word[i:])    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(word) + <span class="number">1</span>)]</span><br><span class="line">    deletes    = [L + R[<span class="number">1</span>:]               <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> R]</span><br><span class="line">    transposes = [L + R[<span class="number">1</span>] + R[<span class="number">0</span>] + R[<span class="number">2</span>:] <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> <span class="built_in">len</span>(R)&gt;<span class="number">1</span>]</span><br><span class="line">    replaces   = [L + c + R[<span class="number">1</span>:]           <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">if</span> R <span class="keyword">for</span> c <span class="keyword">in</span> letters]</span><br><span class="line">    inserts    = [L + c + R               <span class="keyword">for</span> L, R <span class="keyword">in</span> splits <span class="keyword">for</span> c <span class="keyword">in</span> letters]</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">set</span>(deletes + transposes + replaces + inserts)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">edits2</span>(<span class="params">word</span>):</span> </span><br><span class="line">    <span class="string">&quot;All edits that are two edits away from `word`.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> (e2 <span class="keyword">for</span> e1 <span class="keyword">in</span> edits1(word) <span class="keyword">for</span> e2 <span class="keyword">in</span> edits1(e1))</span><br></pre></td></tr></table></figure>
+
+<p>作者這裡只考慮編輯距離為 2 的候選 <code>c</code>。在<code>edits1</code>中，程式對用戶輸入的 <code>w</code> 進行我們提到過的4種編輯步驟，修改後的字串候是候選<code>c</code>，這些候選<code>c</code>的編輯距離為1。<code>edits2</code> 對所有修改過的字串再修改一次，得出的候選<code>c</code>便是編輯距離為2。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">known</span>(<span class="params">words</span>):</span> </span><br><span class="line">    <span class="string">&quot;The subset of `words` that appear in the dictionary of WORDS.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">set</span>(w <span class="keyword">for</span> w <span class="keyword">in</span> words <span class="keyword">if</span> w <span class="keyword">in</span> WORDS)</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>known(edits1(<span class="string">&#x27;somthing&#x27;</span>))</span><br><span class="line">&#123;<span class="string">&#x27;something&#x27;</span>, <span class="string">&#x27;soothing&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="built_in">len</span>(<span class="built_in">set</span>(edits2(<span class="string">&#x27;something&#x27;</span>))</span><br><span class="line"><span class="number">90902</span></span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>known(edits2(<span class="string">&#x27;something&#x27;</span>))</span><br><span class="line">&#123;<span class="string">&#x27;seething&#x27;</span>, <span class="string">&#x27;smoothing&#x27;</span>, <span class="string">&#x27;something&#x27;</span>, <span class="string">&#x27;soothing&#x27;</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>known(edits2(<span class="string">&#x27;somthing&#x27;</span>))</span><br><span class="line">&#123;<span class="string">&#x27;loathing&#x27;</span>, <span class="string">&#x27;nothing&#x27;</span>, <span class="string">&#x27;scathing&#x27;</span>, <span class="string">&#x27;seething&#x27;</span>, <span class="string">&#x27;smoothing&#x27;</span>, <span class="string">&#x27;something&#x27;</span>, <span class="string">&#x27;soothing&#x27;</span>, <span class="string">&#x27;sorting&#x27;</span>&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>然後把這些候選<code>c</code>都過濾一次，只留下出現在詞彙表的<code>c</code>，過濾掉沒有意義的字串。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">words</span>(<span class="params">text</span>):</span> <span class="keyword">return</span> re.findall(<span class="string">r&#x27;\w+&#x27;</span>, text.lower())</span><br><span class="line"></span><br><span class="line">WORDS = Counter(words(<span class="built_in">open</span>(<span class="string">&#x27;big.txt&#x27;</span>).read()))</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">P</span>(<span class="params">word, N=<span class="built_in">sum</span>(<span class="params">WORDS.values(<span class="params"></span>)</span>)</span>):</span> <span class="keyword">return</span> WORDS[word] / N</span><br></pre></td></tr></table></figure>
+
+<p>作者這裡使用到 <a target="_blank" rel="noopener" href="https://norvig.com/big.txt">big.txt</a> 來計算每個 <code>c</code> 的 <code>P(c)</code>。大家也可以使用其他英文文本。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">correction</span>(<span class="params">word</span>):</span> <span class="keyword">return</span> <span class="built_in">max</span>(candidates(word), key=P)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">candidates</span>(<span class="params">word</span>):</span> </span><br><span class="line">    <span class="keyword">return</span> known([word]) <span class="keyword">or</span> known(edits1(word)) <span class="keyword">or</span> known(edits2(word)) <span class="keyword">or</span> [word]</span><br></pre></td></tr></table></figure>
+<p>當用戶輸入 <code>w</code> 時，程式會先檢查 <code>w</code> 有沒有打錯(有沒有出現在詞彙表中)，沒有錯則直接返回 <code>w</code>；有則優先返回編輯距離為1的候選<code>c</code>，然後是編輯距離為2的候選<code>c</code>；若沒有編輯距離為2以內的候選<code>c</code>，則返回 <code>w</code> 表示愛莫能助。</p>
+<h3 id="測試"><a href="#測試" class="headerlink" title="測試"></a>測試</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">unit_tests</span>():</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;speling&#x27;</span>) == <span class="string">&#x27;spelling&#x27;</span>              <span class="comment"># insert</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;korrectud&#x27;</span>) == <span class="string">&#x27;corrected&#x27;</span>           <span class="comment"># replace 2</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;bycycle&#x27;</span>) == <span class="string">&#x27;bicycle&#x27;</span>               <span class="comment"># replace</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;inconvient&#x27;</span>) == <span class="string">&#x27;inconvenient&#x27;</span>       <span class="comment"># insert 2</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;arrainged&#x27;</span>) == <span class="string">&#x27;arranged&#x27;</span>            <span class="comment"># delete</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;peotry&#x27;</span>) ==<span class="string">&#x27;poetry&#x27;</span>                  <span class="comment"># transpose</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;peotryy&#x27;</span>) ==<span class="string">&#x27;poetry&#x27;</span>                 <span class="comment"># transpose + delete</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;word&#x27;</span>) == <span class="string">&#x27;word&#x27;</span>                     <span class="comment"># known</span></span><br><span class="line">    <span class="keyword">assert</span> correction(<span class="string">&#x27;quintessential&#x27;</span>) == <span class="string">&#x27;quintessential&#x27;</span> <span class="comment"># unknown</span></span><br><span class="line">    <span class="keyword">assert</span> words(<span class="string">&#x27;This is a TEST.&#x27;</span>) == [<span class="string">&#x27;this&#x27;</span>, <span class="string">&#x27;is&#x27;</span>, <span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;test&#x27;</span>]</span><br><span class="line">    <span class="keyword">assert</span> Counter(words(<span class="string">&#x27;This is a test. 123; A TEST this is.&#x27;</span>)) == (</span><br><span class="line">           Counter(&#123;<span class="string">&#x27;123&#x27;</span>: <span class="number">1</span>, <span class="string">&#x27;a&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;is&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;test&#x27;</span>: <span class="number">2</span>, <span class="string">&#x27;this&#x27;</span>: <span class="number">2</span>&#125;))</span><br><span class="line">    <span class="keyword">assert</span> <span class="built_in">len</span>(WORDS) == <span class="number">32192</span></span><br><span class="line">    <span class="keyword">assert</span> <span class="built_in">sum</span>(WORDS.values()) == <span class="number">1115504</span></span><br><span class="line">    <span class="keyword">assert</span> WORDS.most_common(<span class="number">10</span>) == [</span><br><span class="line">     (<span class="string">&#x27;the&#x27;</span>, <span class="number">79808</span>),</span><br><span class="line">     (<span class="string">&#x27;of&#x27;</span>, <span class="number">40024</span>),</span><br><span class="line">     (<span class="string">&#x27;and&#x27;</span>, <span class="number">38311</span>),</span><br><span class="line">     (<span class="string">&#x27;to&#x27;</span>, <span class="number">28765</span>),</span><br><span class="line">     (<span class="string">&#x27;in&#x27;</span>, <span class="number">22020</span>),</span><br><span class="line">     (<span class="string">&#x27;a&#x27;</span>, <span class="number">21124</span>),</span><br><span class="line">     (<span class="string">&#x27;that&#x27;</span>, <span class="number">12512</span>),</span><br><span class="line">     (<span class="string">&#x27;he&#x27;</span>, <span class="number">12401</span>),</span><br><span class="line">     (<span class="string">&#x27;was&#x27;</span>, <span class="number">11410</span>),</span><br><span class="line">     (<span class="string">&#x27;it&#x27;</span>, <span class="number">10681</span>)]</span><br><span class="line">    <span class="keyword">assert</span> WORDS[<span class="string">&#x27;the&#x27;</span>] == <span class="number">79808</span></span><br><span class="line">    <span class="keyword">assert</span> P(<span class="string">&#x27;quintessential&#x27;</span>) == <span class="number">0</span></span><br><span class="line">    <span class="keyword">assert</span> <span class="number">0.07</span> &lt; P(<span class="string">&#x27;the&#x27;</span>) &lt; <span class="number">0.08</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;unit_tests pass&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">spelltest</span>(<span class="params">tests, verbose=<span class="literal">False</span></span>):</span></span><br><span class="line">    <span class="string">&quot;Run correction(wrong) on all (right, wrong) pairs; report results.&quot;</span></span><br><span class="line">    <span class="keyword">import</span> time</span><br><span class="line">    start = time.clock()</span><br><span class="line">    good, unknown = <span class="number">0</span>, <span class="number">0</span></span><br><span class="line">    n = <span class="built_in">len</span>(tests)</span><br><span class="line">    <span class="keyword">for</span> right, wrong <span class="keyword">in</span> tests:</span><br><span class="line">        w = correction(wrong)</span><br><span class="line">        good += (w == right)</span><br><span class="line">        <span class="keyword">if</span> w != right:</span><br><span class="line">            unknown += (right <span class="keyword">not</span> <span class="keyword">in</span> WORDS)</span><br><span class="line">            <span class="keyword">if</span> verbose:</span><br><span class="line">                print(<span class="string">&#x27;correction(&#123;&#125;) =&gt; &#123;&#125; (&#123;&#125;); expected &#123;&#125; (&#123;&#125;)&#x27;</span></span><br><span class="line">                      .<span class="built_in">format</span>(wrong, w, WORDS[w], right, WORDS[right]))</span><br><span class="line">    dt = time.clock() - start</span><br><span class="line">    print(<span class="string">&#x27;&#123;:.0%&#125; of &#123;&#125; correct (&#123;:.0%&#125; unknown) at &#123;:.0f&#125; words per second &#x27;</span></span><br><span class="line">          .<span class="built_in">format</span>(good / n, n, unknown / n, n / dt))</span><br><span class="line">    </span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">Testset</span>(<span class="params">lines</span>):</span></span><br><span class="line">    <span class="string">&quot;Parse &#x27;right: wrong1 wrong2&#x27; lines into [(&#x27;right&#x27;, &#x27;wrong1&#x27;), (&#x27;right&#x27;, &#x27;wrong2&#x27;)] pairs.&quot;</span></span><br><span class="line">    <span class="keyword">return</span> [(right, wrong)</span><br><span class="line">            <span class="keyword">for</span> (right, wrongs) <span class="keyword">in</span> (line.split(<span class="string">&#x27;:&#x27;</span>) <span class="keyword">for</span> line <span class="keyword">in</span> lines)</span><br><span class="line">            <span class="keyword">for</span> wrong <span class="keyword">in</span> wrongs.split()]</span><br><span class="line"></span><br><span class="line">print(unit_tests())</span><br><span class="line">spelltest(Testset(<span class="built_in">open</span>(<span class="string">&#x27;spell-testset1.txt&#x27;</span>))) <span class="comment"># Development set</span></span><br><span class="line">spelltest(Testset(<span class="built_in">open</span>(<span class="string">&#x27;spell-testset2.txt&#x27;</span>))) <span class="comment"># Final test set</span></span><br></pre></td></tr></table></figure>
+
+<p>輸出：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">unit_tests <span class="keyword">pass</span></span><br><span class="line"><span class="number">75</span>% of <span class="number">270</span> correct at <span class="number">41</span> words per second</span><br><span class="line"><span class="number">68</span>% of <span class="number">400</span> correct at <span class="number">35</span> words per second</span><br><span class="line"><span class="literal">None</span></span><br></pre></td></tr></table></figure>
+
+<p>作者使用了兩個 test set (<a target="_blank" rel="noopener" href="https://norvig.com/spell-testset1.txt">spell-testset1.txt</a> <a target="_blank" rel="noopener" href="https://norvig.com/spell-testset1.txt">spell-testset2.txt</a>) 來做測試 ，準確率有 70% 左右。還算不錯吧，不竟你也不能要求一個簡單的模型能有多好的結果。測試結果錯誤的原因主要是錯字編輯距離超過2、<code>c</code> 不在詞彙表當中、<code>c</code>為編輯距離2但返回了編輯距離1的候選<code>c</code>等等。</p>
+<p>Peter Norvig認為若想要更好的效果，還需要考慮到 <code>w</code> 的上下文，根據句子的語意，返回適合當前語意且<code>P(c)</code>比較大的<code>c</code>。另外，在計算 <code>P(w|c)</code> 時，除了編輯距離，還可以考慮鍵盤按鍵分佈使輸入錯誤的機率、錯用母音字母、重複輸入等比較常見的錯誤，或許可以更進一步的改善模型。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>博主： </strong>Brian Chan
+  </li>
+  <li class="post-copyright-link">
+      <strong>文章連結：</strong>
+      <a href="http://example.com/2021/02/27/spelling-corrector/" title="簡單實現基於貝葉斯定理的拼寫檢查">http://example.com/2021/02/27/spelling-corrector/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版權聲明： </strong>本網誌所有文章除特別聲明外，均採用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh_TW" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 許可協議。轉載請註明出處！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Python/" rel="tag"><i class="fa fa-tag"></i> Python</a>
+              <a href="/tags/Bayes/" rel="tag"><i class="fa fa-tag"></i> Bayes</a>
+              <a href="/tags/Spelling-corrector/" rel="tag"><i class="fa fa-tag"></i> Spelling corrector</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/02/22/gitignore-not-work/" rel="prev" title=".gitignore 不生效的原因和解決方法">
+                  <i class="fa fa-chevron-left"></i> .gitignore 不生效的原因和解決方法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/03/02/a-star-algo/" rel="next" title="猴子也懂的 A* 搜尋算法">
+                  猴子也懂的 A* 搜尋算法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2021 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Brian Chan</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站點總字數">62k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站點閱讀時長">56 分鍾</span>
+  </span>
+</div>
+<div class="busuanzi-count">
+    <span class="post-meta-item" id="busuanzi_container_site_uv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="訪客總數">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="總瀏覽次數">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 強力驅動
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pangu@4.0.7/dist/browser/pangu.min.js" integrity="sha256-j+yj56cdEY2CwkVtGyz18fNybFGpMGJ8JxG3GSyO2+I=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+
+  
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/quicklink@2.2.0/dist/quicklink.umd.js" integrity="sha256-4kQf9z5ntdQrzsBC3YSHnEz02Z9C1UeW/E9OgnvlzSY=" crossorigin="anonymous"></script>
+  <script class="next-config" data-name="quicklink" type="application/json">{"enable":true,"home":true,"archive":true,"delay":true,"timeout":3000,"priority":true,"url":"http://example.com/2021/02/27/spelling-corrector/"}</script>
+  <script src="/js/third-party/quicklink.js"></script>
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"botnotes","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+<script type="text/javascript" size="300" alpha='0.6' zIndex="-1" src="/js/ribbon.js"></script>
+</body>
+</html>
